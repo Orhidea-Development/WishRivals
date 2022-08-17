@@ -1,0 +1,19 @@
+Lai buildotu pluginu iej projekta specifiskaja terminali un - plugin.merge -m -p ./merge.yml
+mergotais projekts bus MergedPlugins folderi
+more info pa sito prikolu un ka setup : https://github.com/dassjosh/Plugin.Merge
+
+
+
+
+Ja gribi jaunu projektu taisi kaa class library (.net framework)
+refrences nokope no WishStatistics.csproj un ieliec jauna projekta .csproj 
+
+
+Namespace vienmer jabut-  Oxide.Plugins lai nekas nesaplistu
+
+ja gribi accesot kautko no "RustPlugin" (Piem eventus registret) super clases tad vjg vai no main plugina clases vai ari no citas klases kas saucas ta pat ka main plugina klase un ir prieksa "partial" (Apskaties uz WishStatistics.cs un PlayerConnected.cs)
+
+
+
+
+
