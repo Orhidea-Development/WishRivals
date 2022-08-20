@@ -10,9 +10,13 @@ namespace Oxide.Plugins
     {
         void Init()
         {
-            Console.WriteLine("WishStatistics Plugin started");
-            Subscribe("OnUserChat");
             
+            Subscribe("OnBigWheelWin");
+            Subscribe("OnBigWheelLoss");
+            Subscribe("CanMoveItem");
+            Subscribe("CanLootEntity");
+            Subscribe("OnItemSplit");
+
 
         }
 

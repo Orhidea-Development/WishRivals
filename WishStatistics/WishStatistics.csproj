@@ -98,6 +98,9 @@
     <Reference Include="Facepunch.Unity">
       <HintPath>..\Refrences\Facepunch.Unity.dll</HintPath>
     </Reference>
+    <Reference Include="Facepunch.UnityEngine">
+      <HintPath>..\Refrences\Facepunch.UnityEngine.dll</HintPath>
+    </Reference>
     <Reference Include="Fleck">
       <HintPath>..\Refrences\Fleck.dll</HintPath>
     </Reference>
@@ -158,10 +161,6 @@
     <Reference Include="netstandard" />
     <Reference Include="NewAssembly">
       <HintPath>..\Refrences\NewAssembly.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refrences\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Novell.Directory.Ldap">
       <HintPath>..\Refrences\Novell.Directory.Ldap.dll</HintPath>
@@ -436,11 +435,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventListeners\GamblingEvents.cs" />
     <Compile Include="EventListeners\PlayerConnected.cs" />
+    <Compile Include="Libs\PlayerDatabase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WishStatistics.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="merge.yml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

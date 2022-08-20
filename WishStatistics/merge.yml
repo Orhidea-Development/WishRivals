@@ -21,6 +21,7 @@ Merge Settings:
   # Paths to be ignored when searching for source code relative to merge config
   Ignore Paths:
   - ./IgnoreThisPath
+  - ./Libs
   # Files to be ignored when searching for source code relative to merge config
   Ignore Files:
   - ./IgnoreThisFile.cs
