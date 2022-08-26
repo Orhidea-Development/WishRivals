@@ -10,21 +10,6 @@ using Oxide.Core.Database;
 using Newtonsoft.Json;
 using System.Linq;
 
-/*
- *  CHANGELOG
- *  
- *  [2020-06-25 by FAKENINJA] v1.5.9 - Optimization: Removed unnessecary data serialization for SQLite and MySQL
- *  
- *  [2020-06-26 by FAKENINJA] v1.6.0 - Bugfixes: 
- *                                     - Resolved issue with serialization not working on stored list objects in databases.
- *                                     
- *                                     Addition:
- *                                     - Added option to rename MySQL/SQLite database table in config (MySQL/SQLite - Database Table Name)
- * 
- *  [2020-06-28 by FAKENINJA] v1.6.1 - Bugfixes: 
- *                                     - Resolved issue with serialization not working on stored dictionary objects in databases.
- *                                     
- */
 
 namespace Oxide.Plugins
 {

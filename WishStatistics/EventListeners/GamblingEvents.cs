@@ -1,12 +1,4 @@
-﻿using CompanionServer.Handlers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-
-namespace Oxide.Plugins
+﻿namespace Oxide.Plugins
 {
     public partial class WishStatistics
     {
@@ -16,11 +8,12 @@ namespace Oxide.Plugins
         }
         object OnBigWheelWin(BigWheelGame wheel, Item scrap, BigWheelBettingTerminal terminal, int multiplier)
         {
-
             Server.Broadcast($" Win: {scrap.text} owner, {scrap.amount}  amount");
+            Server.Broadcast($" {Database.TestMethod()}");
+
             return null;
         }
-        
+
         object CanMoveItem(Item item, PlayerInventory playerLoot, uint targetContainer, int targetSlot, int amount)
         {
             if (item.info.shortname == "scrap")

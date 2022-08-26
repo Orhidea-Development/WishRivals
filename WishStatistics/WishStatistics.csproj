@@ -445,5 +445,11 @@
     <None Include="app.config" />
     <None Include="merge.yml" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WishInfrastructure\WishInfrastructure.csproj">
+      <Project>{f7225d2d-fe34-48b4-aa8d-3e9bfc5140b1}</Project>
+      <Name>WishInfrastructure</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
