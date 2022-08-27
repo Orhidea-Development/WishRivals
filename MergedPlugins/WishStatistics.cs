@@ -1,9 +1,12 @@
+//Reference: WishInfrastructure
 #define DEBUG
 using Oxide.Core.Libraries.Covalence;
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using WishInfrastructure;
+using WishInfrastructure.Models;
 
 
 //WishStatistics created with PluginMerge v(1.0.4.0) by MJSU @ https://github.com/dassjosh/Plugin.Merge
@@ -14,20 +17,24 @@ namespace Oxide.Plugins
     public partial class WishStatistics : RustPlugin
     {
         #region WishStatistics.cs
-        [PluginReference] WishInfrastructure infrastructure;
+        private ConfigSetup _config;
         
-        private DatabaseClient Database { get; set; }
+        public static DatabaseClient Database { get; set; }
         
         void Init()
         {
-            Database = new DatabaseClient("WishStatistics", infrastructure);
+            _config = new ConfigSetup(this);
             Subscribe("OnBigWheelWin");
             Subscribe("OnBigWheelLoss");
             Subscribe("CanMoveItem");
             Subscribe("CanLootEntity");
             Subscribe("OnItemSplit");
+            Database = new DatabaseClient("WishStats", this);
             
-            
+        }
+        protected override void LoadDefaultConfig()
+        {
+            Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
         }
         #endregion
 
@@ -39,7 +46,7 @@ namespace Oxide.Plugins
         object OnBigWheelWin(BigWheelGame wheel, Item scrap, BigWheelBettingTerminal terminal, int multiplier)
         {
             Server.Broadcast($" Win: {scrap.text} owner, {scrap.amount}  amount");
-            Server.Broadcast($" {Database.TestMethod()}");
+            Server.Broadcast($" { Database.TestMethod()}");
             
             return null;
         }
@@ -71,6 +78,56 @@ namespace Oxide.Plugins
             Server.Broadcast($"{player.Name} connected to the server, debug msg from WISH statistics  PlayerConnected");
             
             return null;
+        }
+        #endregion
+
+        #region Models\ConfigFile.cs
+        public class ConfigFile
+        {
+            public DatabaseConfig DatabaseConfig { get; set; }
+            
+        }
+        #endregion
+
+        #region Startup\ConfigSetup.cs
+        public class ConfigSetup
+        {
+            
+            
+            private readonly RustPlugin _plugin;
+            public ConfigFile ConfigFile { get; set; }
+            
+            
+            internal ConfigSetup(RustPlugin plugin)
+            {
+                _plugin = plugin;
+                Init();
+            }
+            
+            private void Init()
+            {
+                ConfigFile = _plugin.Config.ReadObject<ConfigFile>();
+            }
+            
+            internal static object GetDefaultConfig()
+            {
+                return new ConfigFile()
+                {
+                    DatabaseConfig = GetDefaultDatabaseConfig(),
+                };
+            }
+            
+            private static DatabaseConfig GetDefaultDatabaseConfig()
+            {
+                return new DatabaseConfig
+                {
+                    sql_host = "localhost",
+                    sql_port = 1234,
+                    sql_db = "rust",
+                    sql_user = "admin",
+                    sql_pass = "password"
+                };
+            }
         }
         #endregion
 

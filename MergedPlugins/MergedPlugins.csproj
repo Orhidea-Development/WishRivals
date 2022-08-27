@@ -434,6 +434,9 @@
     <Reference Include="UnityEngine.XRModule">
       <HintPath>..\Refrences\UnityEngine.XRModule.dll</HintPath>
     </Reference>
+    <Reference Include="WishInfrastructure">
+      <HintPath>..\Refrences\WishInfrastructure.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />

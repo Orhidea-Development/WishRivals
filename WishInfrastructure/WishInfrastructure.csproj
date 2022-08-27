@@ -436,16 +436,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DatabaseClient.cs" />
-    <Compile Include="Models\PluginConfig.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Startup\ConfigSetup.cs" />
-    <Compile Include="WishInfrastructure.cs" />
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="Models\DatabaseConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="merge.yml" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

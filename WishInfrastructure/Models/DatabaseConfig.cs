@@ -1,6 +1,6 @@
-﻿namespace Oxide.Plugins
+﻿namespace WishInfrastructure.Models
 {
-    public class PluginConfig
+    public class DatabaseConfig
     {
         public string sql_host { get; set; }
         public int sql_port { get; set; }

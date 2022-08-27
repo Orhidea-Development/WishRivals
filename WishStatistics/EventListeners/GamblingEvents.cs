@@ -9,8 +9,8 @@
         object OnBigWheelWin(BigWheelGame wheel, Item scrap, BigWheelBettingTerminal terminal, int multiplier)
         {
             Server.Broadcast($" Win: {scrap.text} owner, {scrap.amount}  amount");
-            Server.Broadcast($" {Database.TestMethod()}");
-
+            Server.Broadcast($" { Database.TestMethod()}");
+            
             return null;
         }
 

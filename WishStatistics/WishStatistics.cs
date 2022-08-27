@@ -1,5 +1,4 @@
-﻿using Oxide.Core.Libraries.Covalence;
-using System;
+﻿using WishInfrastructure;
 
 namespace Oxide.Plugins
 {
@@ -8,20 +7,24 @@ namespace Oxide.Plugins
 
     public partial class WishStatistics : RustPlugin
     {
-        [PluginReference] WishInfrastructure infrastructure;
+        private ConfigSetup _config;
 
-        private DatabaseClient Database { get; set; }
+        public static DatabaseClient Database { get; set; }
 
         void Init()
         {
-            Database = new DatabaseClient("WishStatistics", infrastructure);
+            _config = new ConfigSetup(this);
             Subscribe("OnBigWheelWin");
             Subscribe("OnBigWheelLoss");
             Subscribe("CanMoveItem");
             Subscribe("CanLootEntity");
             Subscribe("OnItemSplit");
+            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
 
-
+        }
+        protected override void LoadDefaultConfig()
+        {
+            Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
         }
 
     }

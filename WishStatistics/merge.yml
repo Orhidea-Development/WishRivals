@@ -14,7 +14,8 @@ Merge Settings:
   Plugin Output Paths:
   - ../MergedPlugins
   # Oxide //References: definitions
-  Reference Definitions: []
+  Reference Definitions:
+  - WishInfrastructure
   # #define definitions
   Define Definitions:
   - DEBUG
