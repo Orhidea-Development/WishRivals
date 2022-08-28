@@ -26,7 +26,7 @@ namespace Oxide.Plugins
         {
             if (item.info.shortname == "scrap")
             {
-                item.text = playerLoot.baseEntity.displayName;
+                item.text = playerLoot.baseEntity.UserIDString;
             }
             return null;
         }
