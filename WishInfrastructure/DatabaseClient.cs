@@ -5,8 +5,10 @@ using Oxide.Core.MySql.Libraries;
 using Oxide.Plugins;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using WishInfrastructure.Models;
+using static Mono.Security.X509.X520;
 
 namespace WishInfrastructure
 {
@@ -21,7 +23,7 @@ namespace WishInfrastructure
         private List<string> _sqlColumns = new List<string>();
         private List<string> _changedPlayersData = new List<string>();
 
-        Dictionary<string, Hash<string, dynamic>> _sqlData = new Dictionary<string, Hash<string, dynamic>>();
+        Dictionary<string, Hash<string, object>> _sqlData = new Dictionary<string, Hash<string, object>>();
 
         public DatabaseClient(string tableName, RustPlugin plugin, DatabaseConfig databaseConfig)
         {
@@ -29,7 +31,7 @@ namespace WishInfrastructure
             _plugin = plugin;
             _databaseConfig = databaseConfig;
         }
-        void SetupDatabase()
+        public void SetupDatabase()
         {
             LoadData();
         }
@@ -47,11 +49,11 @@ namespace WishInfrastructure
                 }
             }
         }
-        void LoadPlayer(string userid)
+        public void LoadPlayer(string userid)
         {
             try
             {
-                if (!_sqlData.ContainsKey(userid)) _sqlData.Add(userid, new Hash<string, dynamic>());
+                if (!_sqlData.ContainsKey(userid)) _sqlData.Add(userid, new Hash<string, object>());
                 bool newplayer = true;
                 SqlLib.Query(Sql.Builder.Append($"SELECT * from {_tableName} WHERE `userid` = '{userid}'"), Sql_conn, list =>
                 {
@@ -88,12 +90,15 @@ namespace WishInfrastructure
                 Interface.Oxide.LogError(string.Format("Loading {0} got this error: {1}", userid, e.Message));
             }
         }
-        void SetPlayerData(string userid, string key, string data)
+        public void SetPlayerData(string userid, string key, string data)
         {
             if (!IsKnownPlayer(userid)) LoadPlayer(userid);
 
-            SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` LONGTEXT"), Sql_conn);
-            _sqlColumns.Add(key);
+            if (!(_sqlColumns.Contains(key)))
+            {
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` LONGTEXT"), Sql_conn);
+                _sqlColumns.Add(key);
+            }
 
             _sqlData[userid][key] = data.ToString();
 
@@ -101,14 +106,16 @@ namespace WishInfrastructure
                 _changedPlayersData.Add(userid);
 
         }
-        void SetPlayerData(string userid, string key, int data)
+        public void SetPlayerData(string userid, string key, int data)
         {
             if (!IsKnownPlayer(userid)) LoadPlayer(userid);
 
 
-
-            SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` INT"), Sql_conn);
-            _sqlColumns.Add(key);
+            if (!(_sqlColumns.Contains(key)))
+            {
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` INT"), Sql_conn);
+                _sqlColumns.Add(key);
+            }
 
             _sqlData[userid][key] = data;
 
@@ -117,7 +124,7 @@ namespace WishInfrastructure
 
         }
 
-        void SetPlayerDataSerialized<T>(string userid, string key, T data)
+        public void SetPlayerDataSerialized<T>(string userid, string key, T data)
         {
             string serilized = JsonConvert.SerializeObject(data);
             SetPlayerData(userid, key, serilized);
@@ -161,7 +168,7 @@ namespace WishInfrastructure
                     {
                         string steamid = (string)entry["userid"];
                         if (steamid != "0")
-                            _sqlData.Add(steamid, new Hash<string, dynamic>());
+                            _sqlData.Add(steamid, new Hash<string, object>());
                     }
                     LoadPlayers();
                 });
@@ -172,18 +179,24 @@ namespace WishInfrastructure
                 FatalError(e.Message);
             }
         }
-        void SavePlayerDatabase()
+        public void SavePlayerDatabase()
         {
+            Interface.Oxide.LogDebug($"Saving");
+
             foreach (string userid in _changedPlayersData)
             {
                 try
                 {
+                    Interface.Oxide.LogDebug($"  Saving {userid}");
+
                     var values = _sqlData[userid];
 
                     string arg = string.Empty;
                     var parms = new List<object>();
                     foreach (var c in values)
                     {
+                        Interface.Oxide.LogDebug($"      Value: {c.Value}");
+
                         arg += string.Format("{0}`{1}` = @{2}", arg == string.Empty ? string.Empty : ",", c.Key, parms.Count.ToString());
                         parms.Add(c.Value);
                     }
@@ -194,19 +207,21 @@ namespace WishInfrastructure
                 catch (Exception e)
                 {
                     Interface.Oxide.LogWarning(e.Message);
+                    Interface.Oxide.LogWarning(e.StackTrace);
+
                 }
             }
             _changedPlayersData.Clear();
         }
 
-        dynamic GetPlayerDataRaw(string userid, string key)
+        public T GetPlayerDataRaw<T>(string userid, string key)
         {
-            if (!IsKnownPlayer(userid)) return null;
+            if (!IsKnownPlayer(userid)) return default(T);
 
-            if (!_sqlColumns.Contains(key)) return null;
-            if (_sqlData[userid] == null) return null;
-            if (_sqlData[userid][key] == null) return null;
-            return _sqlData[userid][key];
+            if (!_sqlColumns.Contains(key)) return default(T);
+            if (_sqlData[userid] == null) return default(T);
+            if (_sqlData[userid][key] == null) return default(T);
+            return (T) _sqlData[userid][key];
         }
 
         T GetPlayerDataDeserialized<T>(string userid, string key)
@@ -216,7 +231,7 @@ namespace WishInfrastructure
             if (!_sqlColumns.Contains(key)) return default(T);
             if (_sqlData[userid] == null) return default(T);
             if (_sqlData[userid][key] == null) return default(T);
-            return JsonConvert.DeserializeObject<T>(_sqlData[userid][key]);
+            return JsonConvert.DeserializeObject<T>((string)_sqlData[userid][key]);
         }
 
         public List<string> KnownPlayers()
@@ -224,7 +239,7 @@ namespace WishInfrastructure
             return _sqlData.Keys.ToList();
         }
 
-        private bool IsKnownPlayer(string userid)
+        public bool IsKnownPlayer(string userid)
         {
             return _sqlData.ContainsKey(userid);
         }
