@@ -73,13 +73,11 @@ namespace Oxide.Plugins
         //Scrap Gambling
         void OnBigWheelLoss(BigWheelGame wheel, Item scrap)
         {
-            Database.SetPlayerData(scrap.GetOwnerPlayer().UserIDString.ToString(), "ScrapLost", Database.GetPlayerDataRaw<int>(scrap.GetOwnerPlayer().UserIDString, "ScrapLost") + scrap.amount);
-            Server.Broadcast($" player: {scrap.GetOwnerPlayer().UserIDString}, {scrap.amount}  amount");
+            Database.SetPlayerData(scrap.text.ToString(), "ScrapLost", Database.GetPlayerDataRaw<int>(scrap.text, "ScrapLost") + scrap.amount);
         }
         object OnBigWheelWin(BigWheelGame wheel, Item scrap, BigWheelBettingTerminal terminal, int multiplier)
         {
-            Database.SetPlayerData(scrap.GetOwnerPlayer().UserIDString.ToString(), "ScrapWon", Database.GetPlayerDataRaw<int>(scrap.GetOwnerPlayer().UserIDString, "ScrapWon") + scrap.amount);
-            Server.Broadcast($" player: {scrap.GetOwnerPlayer().UserIDString}, {scrap.amount}  amount");
+            Database.SetPlayerData(scrap.text.ToString(), "ScrapWon", Database.GetPlayerDataRaw<int>(scrap.text, "ScrapWon") + scrap.amount);
             return null;
         }
         
@@ -87,7 +85,7 @@ namespace Oxide.Plugins
         {
             if (item.info.shortname == "scrap")
             {
-                item.text = playerLoot.baseEntity.displayName;
+                item.text = playerLoot.baseEntity.UserIDString;
             }
             return null;
         }
