@@ -1,0 +1,48 @@
+{
+  "Platform": "Oxide",
+  "Merge Settings": {
+    "Plugin Name": "MyPluginName",
+    "Plugin Base Class": "CovalencePlugin",
+    "Creator Mode": "Plugin",
+    "Plugin Input Paths": [
+      "./"
+    ],
+    "Plugin Output Paths": [
+      "./build"
+    ],
+    "Reference Definitions": [],
+    "Define Definitions": [
+      "DEBUG"
+    ],
+    "Ignore Paths": [
+      "./IgnoreThisPath"
+    ],
+    "Ignore Files": [
+      "./IgnoreThisFile.cs"
+    ],
+    "Ignore Namespaces": [
+      "IgnoreThisNameSpace"
+    ],
+    "Code Style": {
+      "Indent Character": " ",
+      "Indent Char Amount": 4,
+      "Indent Multiplier": 1,
+      "New Line String": "\r\n",
+      "Write The Relative File Path In Region": true,
+      "Keep Comments Comments": true
+    }
+  },
+  "Compile Settings": {
+    "Assembly Paths": [
+      "./Assemblies"
+    ],
+    "Ignore Paths": [
+      "./Assemblies/x86",
+      "./Assemblies/x64"
+    ],
+    "Ignore Files": [
+      "./Assemblies/Newtonsoft.Json.dll"
+    ],
+    "Compile Log Level (Hidden, Info, Warning, Error)": "Error"
+  }
+}

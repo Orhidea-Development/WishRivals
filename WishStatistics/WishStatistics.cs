@@ -19,13 +19,20 @@ namespace Oxide.Plugins
             Subscribe("CanMoveItem");
             Subscribe("CanLootEntity");
             Subscribe("OnItemSplit");
+
+            //Database
+            Subscribe("OnServerSave");
+            Subscribe("OnUserConnected");
             Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
 
         }
         protected override void LoadDefaultConfig()
         {
             Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
         }
+
+
 
     }
 }

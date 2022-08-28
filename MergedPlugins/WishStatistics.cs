@@ -1,10 +1,15 @@
 //Reference: WishInfrastructure
 #define DEBUG
+using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using WishInfrastructure;
 using WishInfrastructure.Models;
 
@@ -29,7 +34,12 @@ namespace Oxide.Plugins
             Subscribe("CanMoveItem");
             Subscribe("CanLootEntity");
             Subscribe("OnItemSplit");
-            Database = new DatabaseClient("WishStats", this);
+            
+            //Database
+            Subscribe("OnServerSave");
+            Subscribe("OnUserConnected");
+            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
             
         }
         protected override void LoadDefaultConfig()
@@ -38,16 +48,35 @@ namespace Oxide.Plugins
         }
         #endregion
 
-        #region EventListeners\GamblingEvents.cs
+        #region EventListeners\DatabaseSaveEvents.cs
+        void OnServerSave()
+        {
+            Interface.Oxide.LogDebug($"Performing database save");
+            Database.SavePlayerDatabase();
+        }
+        
+        void OnUserConnected(IPlayer player)
+        {
+            if (!Database.IsKnownPlayer(player.Id))
+            {
+                Database.LoadPlayer(player.Id);
+            }
+            
+            Database.SetPlayerData(player.Id, "name", player.Name);
+        }
+        #endregion
+
+        #region EventListeners\PlayerEvents.cs
+        //Scrap Gambling
         void OnBigWheelLoss(BigWheelGame wheel, Item scrap)
         {
-            Server.Broadcast($" Lost: {scrap.text} owner, {scrap.amount}  amount");
+            Database.SetPlayerData(scrap.GetOwnerPlayer().UserIDString.ToString(), "ScrapLost", Database.GetPlayerDataRaw<int>(scrap.GetOwnerPlayer().UserIDString, "ScrapLost") + scrap.amount);
+            Server.Broadcast($" player: {scrap.GetOwnerPlayer().UserIDString}, {scrap.amount}  amount");
         }
         object OnBigWheelWin(BigWheelGame wheel, Item scrap, BigWheelBettingTerminal terminal, int multiplier)
         {
-            Server.Broadcast($" Win: {scrap.text} owner, {scrap.amount}  amount");
-            Server.Broadcast($" { Database.TestMethod()}");
-            
+            Database.SetPlayerData(scrap.GetOwnerPlayer().UserIDString.ToString(), "ScrapWon", Database.GetPlayerDataRaw<int>(scrap.GetOwnerPlayer().UserIDString, "ScrapWon") + scrap.amount);
+            Server.Broadcast($" player: {scrap.GetOwnerPlayer().UserIDString}, {scrap.amount}  amount");
             return null;
         }
         
@@ -69,16 +98,68 @@ namespace Oxide.Plugins
             }
             return null;
         }
-        #endregion
-
-        #region EventListeners\PlayerConnected.cs
-        object OnUserChat(IPlayer player, string message)
+        //Scrap Gaming End
+        
+        
+        //Player Kills & Deaths
+        private void OnPlayerDeath(BasePlayer player, HitInfo info)
         {
-            Puts("OnPlayerCommand works!");
-            Server.Broadcast($"{player.Name} connected to the server, debug msg from WISH statistics  PlayerConnected");
+            if (info == null || player == null || player.IsNpc)
+            return;
+            
+            Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
+            
+            var attacker = info.InitiatorPlayer;
+            if (attacker == null || attacker.IsNpc)
+            return;
+            
+            Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
+        }
+        //End Player Kills & Deaths
+        
+        
+        //Damage done
+        object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo info)
+        {
+            if (info == null || entity == null || info?.HitEntity == null || entity.IsNpc)
+            return null;
+            
+            var attacker = info.InitiatorPlayer;
+            if (attacker == null || attacker.IsNpc)
+            return null;
+            
+            Database.SetPlayerData(attacker.UserIDString.ToString(), "Hits", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Hits") + 1);
+            
+            if (!info.HitEntity.IsNpc)
+            {
+                NextTick(() =>
+                {
+                    var damages = info?.damageTypes?.Total() ?? 0f;
+                    Database.SetPlayerData(attacker.UserIDString.ToString(), "Damage", (int)(Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Damage") + damages));
+                });
+                
+                if (info.isHeadshot)
+                {
+                    Database.SetPlayerData(attacker.UserIDString.ToString(), "Headshots", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Headshots") + 1);
+                }
+            }
+            
             
             return null;
         }
+        //End Damage done
+        
+        //Accuracy
+        //Shots:hits
+        void OnWeaponFired(BaseProjectile projectile, BasePlayer player, ItemModProjectile mod, ProtoBuf.ProjectileShoot projectiles)
+        {
+            if (projectile == null || player == null)
+            return;
+            
+            Database.SetPlayerData(player.UserIDString.ToString(), "Shots", Database.GetPlayerDataRaw<int>(player.UserIDString, "Shots") + 1);
+        }
+        
+        //End Accuracy
         #endregion
 
         #region Models\ConfigFile.cs
