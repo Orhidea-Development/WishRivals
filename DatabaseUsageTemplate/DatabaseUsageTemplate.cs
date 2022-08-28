@@ -17,7 +17,7 @@ namespace Oxide.Plugins
         {
             _config = new ConfigSetup(this);
 
-            Database = new DatabaseClient("DatabaseUsageTemplate", this, _config.ConfigFile.DatabaseConfig);
+            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
 
             Database.SetupDatabase();
 
@@ -31,14 +31,34 @@ namespace Oxide.Plugins
         {
             Interface.Oxide.LogDebug($"Adding test values {player.UserIDString}");
 
-            Database.SetPlayerData(player.UserIDString.ToString(), "TestDataString", "worked");
+            Database.SetPlayerData(player.UserIDString, "TestDataString", "worked");
 
-            Database.SetPlayerData(player.UserIDString.ToString(), "TestDataInt", Database.GetPlayerDataRaw<int>(player.UserIDString, "TestDataInt") + 1);
+            Database.SetPlayerData(player.UserIDString, "TestDataInt", Database.GetPlayerDataRaw<int>(player.UserIDString, "TestDataInt") + 1);
 
             Interface.Oxide.LogDebug($"Performing database save");
 
             Database.SavePlayerDatabase();
         }
+
+        [ChatCommand("leaderboardtest")]
+        private void LeaderboardTest(BasePlayer player, string leaderboard, string[] args)
+        {
+            Interface.Oxide.LogDebug($"Finding leaderboard: {args[0]}");
+            var top = Database.GetLeaderboard<int>(args[0], 5);
+            Interface.Oxide.LogDebug($"Found leaderboard: {top.Count}");
+
+            Server.Broadcast($"Leaderboard: {top.Count}");
+
+            Server.Broadcast($"Leaderboard: {args[0]}");
+
+            for (int i = 0; i < top.Count; i++)
+            {
+                Server.Broadcast($"{i + 1}. {top[i].Key}: {top[i].Value}");
+            }
+
+
+        }
+
 
         protected override void LoadDefaultConfig()
         {

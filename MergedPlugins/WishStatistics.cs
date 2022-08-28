@@ -53,10 +53,13 @@ namespace Oxide.Plugins
         {
             Interface.Oxide.LogDebug($"Performing database save");
             Database.SavePlayerDatabase();
+            
         }
         
         void OnUserConnected(IPlayer player)
         {
+            Interface.Oxide.LogDebug($"User conencted loading sql data for table WishStats ");
+            
             if (!Database.IsKnownPlayer(player.Id))
             {
                 Database.LoadPlayer(player.Id);

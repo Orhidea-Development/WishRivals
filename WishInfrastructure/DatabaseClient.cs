@@ -213,6 +213,61 @@ namespace WishInfrastructure
             }
             _changedPlayersData.Clear();
         }
+        public List<KeyValuePair<string, T>> GetLeaderboard<T>(string key, int take = 5)
+        {
+            var returnValues = new List<KeyValuePair<string, T>>();
+            var query = $"Select ifnull({key}, 0) as {key}, ifnull(name,'None') as name from {_tableName} ORDER BY {key} DESC LIMIT {take}";
+            Interface.Oxide.LogDebug(query);
+
+            SqlLib.Query(Sql.Builder.Append(query), Sql_conn, list =>
+            {
+                foreach (var x in list)
+                {
+                    object possibleName = null;
+                    Interface.Oxide.LogDebug("HereStart");
+
+                    if (x.TryGetValue("name", out possibleName))
+                    {
+                        if (possibleName != null)
+                        {
+
+                            Interface.Oxide.LogDebug((string)possibleName);
+
+                            object possibleValue = null;
+                            if (x.TryGetValue(key, out possibleValue))
+                            {
+                                if (possibleValue != null)
+                                {
+                                    Interface.Oxide.LogDebug(((int)possibleValue).ToString());
+
+                                    returnValues.Add(new KeyValuePair<string, T>((string)possibleName, (T)possibleValue));
+                                    Interface.Oxide.LogDebug("Here-");
+
+                                    continue;
+                                }
+                            }
+                            Interface.Oxide.LogDebug("Here");
+
+                            returnValues.Add(new KeyValuePair<string, T>((string)possibleName, default(T)));
+                            continue;
+                        }
+                    }
+                    Interface.Oxide.LogDebug("Here2");
+
+                    returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
+
+                }
+            });
+
+            if (returnValues.Count < take)
+            {
+                for (int i = 0; i < take - returnValues.Count; i++)
+                {
+                    returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
+                }
+            }
+            return returnValues;
+        }
 
         public T GetPlayerDataRaw<T>(string userid, string key)
         {
@@ -221,7 +276,7 @@ namespace WishInfrastructure
             if (!_sqlColumns.Contains(key)) return default(T);
             if (_sqlData[userid] == null) return default(T);
             if (_sqlData[userid][key] == null) return default(T);
-            return (T) _sqlData[userid][key];
+            return (T)_sqlData[userid][key];
         }
 
         T GetPlayerDataDeserialized<T>(string userid, string key)
