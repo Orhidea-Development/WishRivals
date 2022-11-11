@@ -12,6 +12,8 @@ namespace Oxide.Plugins
         private ConfigSetup _config;
 
         public static DatabaseClient Database { get; set; }
+        public static LeaderboardService LbService { get; set; }
+
 
         void Init()
         {
@@ -22,19 +24,23 @@ namespace Oxide.Plugins
             SubscribeToEvents();
 
             InitInfrastructure();
+
+            LbService = new LeaderboardService(Database);
+
             stopwatch.Stop();
-            Interface.Oxide.LogDebug($"ÉND Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
+            Interface.Oxide.LogDebug($"END Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
 
         }
 
         private void InitInfrastructure()
         {
             Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
         }
 
         private void SubscribeToEvents()
         {
-
+            Subscribe("OnServerSave");
         }
         protected override void LoadDefaultConfig()
         {

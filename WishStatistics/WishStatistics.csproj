@@ -437,7 +437,6 @@
   <ItemGroup>
     <Compile Include="EventListeners\DatabaseSaveEvents.cs" />
     <Compile Include="EventListeners\PlayerEvents.cs" />
-    <Compile Include="Libs\PlayerDatabase.cs" />
     <Compile Include="Models\ConfigFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup\ConfigSetup.cs" />
@@ -456,6 +455,8 @@
       <Name>WishInfrastructure</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Libs\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

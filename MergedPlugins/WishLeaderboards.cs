@@ -1,8 +1,7 @@
 //Reference: WishInfrastructure
 #define DEBUG
 using Oxide.Core;
-using System;
-using System.ComponentModel;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -22,6 +21,8 @@ namespace Oxide.Plugins
         private ConfigSetup _config;
         
         public static DatabaseClient Database { get; set; }
+        public static LeaderboardService LbService { get; set; }
+        
         
         void Init()
         {
@@ -32,23 +33,105 @@ namespace Oxide.Plugins
             SubscribeToEvents();
             
             InitInfrastructure();
+            
+            LbService = new LeaderboardService(Database);
+            
             stopwatch.Stop();
-            Interface.Oxide.LogDebug($"ÉND Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
+            Interface.Oxide.LogDebug($"END Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
             
         }
         
         private void InitInfrastructure()
         {
             Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
         }
         
         private void SubscribeToEvents()
         {
-            
+            Subscribe("OnServerSave");
         }
         protected override void LoadDefaultConfig()
         {
             Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
+        }
+        #endregion
+
+        #region EventListeners\ServerEvents.cs
+        void OnServerSave()
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Interface.Oxide.LogDebug($"START Updating leaderboards");
+            
+            LbService.UpdateLeaderboards();
+            stopwatch.Stop();
+            
+            Interface.Oxide.LogDebug($"STOP Updating leaderboards {stopwatch.ElapsedMilliseconds}ms");
+            
+        }
+        #endregion
+
+        #region Leaderboard.cs
+        public class Leaderboard
+        {
+            private readonly DatabaseClient _databaseClient;
+            private readonly string _leaderboardName;
+            private  List<KeyValuePair<string, int>> _playersWithValues;
+            
+            public Leaderboard(DatabaseClient databaseClient, string leaderboard)
+            {
+                _databaseClient = databaseClient;
+                _leaderboardName = leaderboard;
+                Update();
+            }
+            public List<KeyValuePair<string, int>> GetLeaderboard()
+            {
+                return _databaseClient.GetLeaderboard<int>(_leaderboardName);
+            }
+            public void Update()
+            {
+                _playersWithValues = _databaseClient.GetLeaderboard<int>(_leaderboardName);
+            }
+        }
+        #endregion
+
+        #region LeaderboardService.cs
+        public class LeaderboardService
+        {
+            private List<Leaderboard> _leaderboards;
+            private readonly DatabaseClient _databaseClient;
+            
+            public LeaderboardService(DatabaseClient databaseClient)
+            {
+                
+                _databaseClient = databaseClient;
+                RegisterLeaderboards();
+            }
+            public void UpdateLeaderboards()
+            {
+                _leaderboards.ForEach(lb => lb.Update());
+            }
+            public List<Leaderboard> GetLeaderboards()
+            {
+                return _leaderboards;
+            }
+            private void RegisterLeaderboards()
+            {
+                _leaderboards = new List<Leaderboard>()
+                {
+                    InitLeaderboard("Shots"),
+                    InitLeaderboard("Headshots"),
+                    InitLeaderboard("Damage"),
+                    InitLeaderboard("Hits"),
+                    InitLeaderboard("Kills"),
+                    InitLeaderboard("ScrapWon"),
+                    InitLeaderboard("ScrapLost"),
+                };
+            }
+            private Leaderboard InitLeaderboard(string name)
+            {
+                return new Leaderboard(_databaseClient, name);
+            }
         }
         #endregion
 

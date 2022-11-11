@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>70443944-7684-4c16-b075-668f23441e87</ProjectGuid>
+    <ProjectGuid>{70443944-7684-4C16-B075-668F23441E87}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WishLeaderboards</RootNamespace>
@@ -30,7 +30,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
- <ItemGroup>
+  <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\Refrences\0Harmony.dll</HintPath>
     </Reference>
@@ -435,8 +435,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="EventListeners\ServerEvents.cs" />
+    <Compile Include="Leaderboard.cs" />
+    <Compile Include="LeaderboardService.cs" />
+    <Compile Include="Models\ConfigFile.cs" />
+    <Compile Include="Startup\ConfigSetup.cs" />
+    <Compile Include="WishLeaderboards.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WishInfrastructure\WishInfrastructure.csproj">
+      <Project>{f7225d2d-fe34-48b4-aa8d-3e9bfc5140b1}</Project>
+      <Name>WishInfrastructure</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="merge.yml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
- </Project>
+</Project>

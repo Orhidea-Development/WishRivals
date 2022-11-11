@@ -9,15 +9,15 @@ namespace Oxide.Plugins
         private readonly string _leaderboardName;
         private  List<KeyValuePair<string, int>> _playersWithValues;
         
-        protected Leaderboard(DatabaseClient databaseClient, string leaderboard)
+        public Leaderboard(DatabaseClient databaseClient, string leaderboard)
         {
             _databaseClient = databaseClient;
             _leaderboardName = leaderboard;
+            Update();
         }
         public List<KeyValuePair<string, int>> GetLeaderboard()
         {
             return _databaseClient.GetLeaderboard<int>(_leaderboardName);
-
         }
         public void Update()
         {

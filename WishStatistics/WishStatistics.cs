@@ -14,8 +14,8 @@ namespace Oxide.Plugins
         void Init()
         {
             _config = new ConfigSetup(this);
-            SubscribeToEvents();
 
+            SubscribeToEvents();
             InitInfrastructure();
 
         }
