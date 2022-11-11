@@ -49,23 +49,35 @@ namespace Oxide.Plugins
         #endregion
 
         #region EventListeners\DatabaseSaveEvents.cs
+        private List<KeyValuePair<string, int>> _proofOfConceptLeaderboards;
         void OnServerSave()
         {
             Interface.Oxide.LogDebug($"Performing database save");
             Database.SavePlayerDatabase();
             
+            if (_proofOfConceptLeaderboards != null)
+            {
+                Interface.Oxide.LogDebug($"Proof of concept lb");
+                
+                for (int i = 0; i < _proofOfConceptLeaderboards.Count; i++)
+                {
+                    Interface.Oxide.LogDebug($" {i}) {_proofOfConceptLeaderboards[i].Key} {_proofOfConceptLeaderboards[i].Value} hits");
+                    
+                }
+                
+            }
+            _proofOfConceptLeaderboards = Database.GetLeaderboard<int>("Hits");
         }
         
         void OnUserConnected(IPlayer player)
         {
-            Interface.Oxide.LogDebug($"User conencted loading sql data for table WishStats ");
-            
             if (!Database.IsKnownPlayer(player.Id))
             {
                 Database.LoadPlayer(player.Id);
             }
             
             Database.SetPlayerData(player.Id, "name", player.Name);
+            
         }
         #endregion
 

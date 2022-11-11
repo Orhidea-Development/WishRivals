@@ -224,48 +224,40 @@ namespace WishInfrastructure
                 foreach (var x in list)
                 {
                     object possibleName = null;
-                    Interface.Oxide.LogDebug("HereStart");
 
                     if (x.TryGetValue("name", out possibleName))
                     {
                         if (possibleName != null)
                         {
 
-                            Interface.Oxide.LogDebug((string)possibleName);
 
                             object possibleValue = null;
                             if (x.TryGetValue(key, out possibleValue))
                             {
                                 if (possibleValue != null)
                                 {
-                                    Interface.Oxide.LogDebug(((int)possibleValue).ToString());
-
                                     returnValues.Add(new KeyValuePair<string, T>((string)possibleName, (T)possibleValue));
-                                    Interface.Oxide.LogDebug("Here-");
 
                                     continue;
                                 }
                             }
-                            Interface.Oxide.LogDebug("Here");
-
                             returnValues.Add(new KeyValuePair<string, T>((string)possibleName, default(T)));
                             continue;
                         }
                     }
-                    Interface.Oxide.LogDebug("Here2");
-
                     returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
 
                 }
-            });
-
-            if (returnValues.Count < take)
+                            if (returnValues.Count < take)
             {
                 for (int i = 0; i < take - returnValues.Count; i++)
                 {
                     returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
                 }
             }
+            });
+
+
             return returnValues;
         }
 

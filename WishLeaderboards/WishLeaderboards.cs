@@ -1,11 +1,13 @@
-﻿using WishInfrastructure;
+﻿using Oxide.Core;
+using System.Diagnostics;
+using WishInfrastructure;
+
 
 namespace Oxide.Plugins
 {
-    [Info("WishStatistics", "Latvish&Zurius", "0.0.2")]
-    [Description("WishStatistics")]
-
-    public partial class WishStatistics : RustPlugin
+    [Info("WishLeaderboards", "Latvish&Zurius", "0.0.2")]
+    [Description("WishLeaderboards")]
+    public partial class WishLeaderboards : RustPlugin
     {
         private ConfigSetup _config;
 
@@ -13,36 +15,30 @@ namespace Oxide.Plugins
 
         void Init()
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Interface.Oxide.LogDebug($"START Init WishLeaderboards");
             _config = new ConfigSetup(this);
+
             SubscribeToEvents();
 
             InitInfrastructure();
+            stopwatch.Stop();
+            Interface.Oxide.LogDebug($"ÉND Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
 
         }
 
         private void InitInfrastructure()
         {
-            Subscribe("OnServerSave");
-            Subscribe("OnUserConnected");
             Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
-            Database.SetupDatabase();
         }
 
         private void SubscribeToEvents()
         {
-            Subscribe("OnBigWheelWin");
-            Subscribe("OnBigWheelLoss");
-            Subscribe("CanMoveItem");
-            Subscribe("CanLootEntity");
-            Subscribe("OnItemSplit");
-        }
 
+        }
         protected override void LoadDefaultConfig()
         {
             Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
         }
-
-
-
     }
 }
