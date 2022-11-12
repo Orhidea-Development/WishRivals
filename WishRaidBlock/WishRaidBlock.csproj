@@ -437,6 +437,7 @@
   <ItemGroup>
     <Compile Include="ChatCommands.cs" />
     <Compile Include="Events.cs" />
+    <Compile Include="GuiService.cs" />
     <Compile Include="MessageRegister.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RaidBlockService.cs" />

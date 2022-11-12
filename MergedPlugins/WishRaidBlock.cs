@@ -3,6 +3,7 @@
 using Oxide.Core;
 using Oxide.Core.Configuration;
 using Oxide.Core.Libraries;
+using Oxide.Game.Rust.Cui;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +26,8 @@ namespace Oxide.Plugins
         {
             PrintToChat(player, lang.GetMessage("nodamage", this, player.UserIDString)
             .Replace("{starttime}", ShowTime(_raidBlockService.GetStartTime()))
-            .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime())));
+            .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime()))
+            .Replace("{isOn}", _raidBlockService.IsOn() ? "ON" : "OFF"));
             
             if (!permission.UserHasPermission(player.UserIDString, adminPriv))
             return;
@@ -63,7 +65,16 @@ namespace Oxide.Plugins
                 if (entity is BasePlayer) return null;                          // damage to players ok!!
                 if (entity.OwnerID == 0) return null;
                 if (entity.OwnerID == info.InitiatorPlayer.userID) return null; // owner can damage own stuff
-                //TODO ALLOW TEAM TO DESTROY SHIT
+                //Allow attacking teams stuff
+                if (info.InitiatorPlayer.Team != null)
+                {
+                    if (info.InitiatorPlayer.Team.teamID != 0UL)
+                    {
+                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true) { return null;
+                        }
+                    }
+                }
+                
                 
                 if (info.InitiatorPlayer != null)
                 {
@@ -96,7 +107,7 @@ namespace Oxide.Plugins
         #endregion
 
         #region WishRaidBlock.cs
-        const string adminPriv = "Raid block.admin";
+        const string adminPriv = "Raidblock.admin";
         private RaidBlockService _raidBlockService;
         void Init()
         {
@@ -109,6 +120,20 @@ namespace Oxide.Plugins
             SubscribeToEvents();
             
             stopwatch.Stop();
+            GuiService guiService = new GuiService();
+            timer.Every(5, () =>
+            {
+                if (_raidBlockService.IsOn())
+                {
+                    Interface.Oxide.LogDebug("Raidlock active, enabling UI");
+                    
+                    guiService.ActivateGui();
+                }
+                else {
+                    Interface.Oxide.LogDebug("Raidlock disabled, destroying UI");
+                    guiService.DestroyGui();
+                }
+            });
             Interface.Oxide.LogDebug($"END Init WishRaidBlock {stopwatch.ElapsedMilliseconds}ms");
             
         }
@@ -148,7 +173,6 @@ namespace Oxide.Plugins
             Config["RaidBlockEnd"] = "12:00";
             Config["RaidBlockOn"] = true;
             Config["RaidBlockInformPlayer"] = true;
-            
             SaveConfig();
         }
         private void RegisterMessages()
@@ -168,6 +192,89 @@ namespace Oxide.Plugins
         }
         #endregion
 
+        #region GuiService.cs
+        public class GuiService
+        {
+            public static readonly string RAIDBLOCKENABLEDGUI = @"[
+            {
+                ""name"": ""RaidLockBackground"",
+                ""parent"": ""Overlay"",
+                ""components"": [
+                {
+                    ""type"": ""UnityEngine.UI.Image"",
+                    ""sprite"": """",
+                    ""material"": """",
+                    ""color"": ""1 0 0 0.5756225""
+                },
+                {
+                    ""type"": ""RectTransform"",
+                    ""anchormin"": ""0.0140625 0.4407408"",
+                    ""anchormax"": ""0.1479166 0.5083333"",
+                    ""offsetmax"": ""0 0""
+                }
+                ]
+            },
+            {
+                ""name"": ""RaidlockText"",
+                ""parent"": ""RaidLockBackground"",
+                ""components"": [
+                {
+                    ""type"": ""UnityEngine.UI.Text"",
+                    ""text"": ""Raiding is disabled"",
+                    ""align"": ""MiddleCenter""
+                },
+                {
+                    ""type"": ""RectTransform"",
+                    ""anchormin"": ""0.003890991 -5.960464E-08"",
+                    ""anchormax"": ""1.003891 1.041097"",
+                    ""offsetmax"": ""0 0""
+                }
+                ]
+            }
+            ]";
+            static List<BasePlayer> _players = new List<BasePlayer>();
+            
+            public void ActivateGui()
+            {
+                Interface.Oxide.LogDebug($"Active player with ui enabled {_players.Count}");
+                
+                _players = _players.Where(player => IsOnline(player)).ToList();
+                Interface.Oxide.LogDebug($"Active player with ui enabled {_players.Count}");
+                
+                var activePlayers = BasePlayer.activePlayerList;
+                
+                foreach (var player in activePlayers)
+                {
+                    if (_players.Any(x => x.userID == player.userID))
+                    {
+                        continue;
+                    }
+                    Interface.Oxide.LogDebug($"Enabling raidblock ui for {player.displayName}");
+                    
+                    CuiHelper.AddUi(player, RAIDBLOCKENABLEDGUI);
+                    _players.Add(player);
+                };
+            }
+            
+            private static bool IsOnline(BasePlayer player)
+            {
+                return BasePlayer.activePlayerList.Any(x => x.userID == player.userID);
+            }
+            
+            public void DestroyGui()
+            {
+                foreach (var player in _players)
+                {
+                    if (IsOnline(player))
+                    {
+                        CuiHelper.DestroyUi(player, "RaidLockBackground");
+                    }
+                };
+                _players = new List<BasePlayer>();
+            }
+        }
+        #endregion
+
         #region MessageRegister.cs
         public class MessageRegister
         {
@@ -181,7 +288,6 @@ namespace Oxide.Plugins
             }
             public void Register()
             {
-                
                 RegisterEnglishMessages();
             }
             
@@ -190,7 +296,7 @@ namespace Oxide.Plugins
                 _lang.RegisterMessages(new Dictionary<string, string>
                 {
                     { "localtime", "Local time is {localtime}." },
-                    { "nodamage", "You cannot cause damage between {starttime} and {endtime}." },
+                    { "nodamage", "You cannot cause damage to buildings from {starttime} until {endtime}. Currently damage is {isOn}" },
                     { "activated", "You cannot cause damage while Raid block is activated." },
                     { "starts", "Raid block starts at {starts}." },
                     { "onstatus", "Raid block is ON. It is active  from @ {starttime} until {endtime}" },
@@ -273,8 +379,9 @@ namespace Oxide.Plugins
             
             private static DateTime GetLatvianTime()
             {
-                TimeZoneInfo eeZone = TimeZoneInfo.FindSystemTimeZoneById("E. Europe Standard Time");
-                return TimeZoneInfo.ConvertTimeToUtc(DateTime.Now, eeZone);
+                var currentTime = DateTime.Now.AddHours(1);
+                Interface.Oxide.LogDebug($"Got latvian time: {currentTime.TimeOfDay}");
+                return currentTime;
             }
         }
         #endregion

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Oxide.Plugins
 {
@@ -15,8 +16,17 @@ namespace Oxide.Plugins
                 if (entity is BasePlayer) return null;                          // damage to players ok!!
                 if (entity.OwnerID == 0) return null;
                 if (entity.OwnerID == info.InitiatorPlayer.userID) return null; // owner can damage own stuff
-                 //TODO ALLOW TEAM TO DESTROY SHIT
-                 
+                //Allow attacking teams stuff
+                if (info.InitiatorPlayer.Team != null)
+                {
+                    if (info.InitiatorPlayer.Team.teamID != 0UL)
+                    {
+                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true) { return null;
+                        }
+                    }
+                }
+
+
                 if (info.InitiatorPlayer != null)
                 {
 

@@ -74,8 +74,9 @@ namespace Oxide.Plugins
 
         private static DateTime GetLatvianTime()
         {
-            TimeZoneInfo eeZone = TimeZoneInfo.FindSystemTimeZoneById("E. Europe Standard Time");
-            return TimeZoneInfo.ConvertTimeToUtc(DateTime.Now, eeZone);
+            var currentTime = DateTime.Now.AddHours(1);
+            Interface.Oxide.LogDebug($"Got latvian time: {currentTime.TimeOfDay}");
+            return currentTime;
         }
     }
 }

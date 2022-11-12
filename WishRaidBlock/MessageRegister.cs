@@ -16,7 +16,6 @@ namespace Oxide.Plugins
         }
         public void Register()
         {
-
             RegisterEnglishMessages();
         }
 
@@ -25,7 +24,7 @@ namespace Oxide.Plugins
             _lang.RegisterMessages(new Dictionary<string, string>
                 {
                     { "localtime", "Local time is {localtime}." },
-                    { "nodamage", "You cannot cause damage from {starttime} until {endtime}." },
+                    { "nodamage", "You cannot cause damage to buildings from {starttime} until {endtime}. Currently damage is {isOn}" },
                     { "activated", "You cannot cause damage while Raid block is activated." },
                     { "starts", "Raid block starts at {starts}." },
                     { "onstatus", "Raid block is ON. It is active  from @ {starttime} until {endtime}" },

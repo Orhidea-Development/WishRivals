@@ -9,7 +9,8 @@ namespace Oxide.Plugins
         {
             PrintToChat(player, lang.GetMessage("nodamage", this, player.UserIDString)
                 .Replace("{starttime}", ShowTime(_raidBlockService.GetStartTime()))
-                .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime())));
+                .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime()))
+                .Replace("{isOn}", _raidBlockService.IsOn() ? "ON" : "OFF"));
 
             if (!permission.UserHasPermission(player.UserIDString, adminPriv))
                 return;

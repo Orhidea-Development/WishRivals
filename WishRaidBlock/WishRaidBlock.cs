@@ -8,7 +8,7 @@ namespace Oxide.Plugins
     [Description("WishRaidBlock")]
     public partial class WishRaidBlock : RustPlugin
     {
-        const string adminPriv = "Raid block.admin";
+        const string adminPriv = "Raidblock.admin";
         private RaidBlockService _raidBlockService;
         void Init()
         {
@@ -21,6 +21,20 @@ namespace Oxide.Plugins
             SubscribeToEvents();
 
             stopwatch.Stop();
+            GuiService guiService = new GuiService();
+            timer.Every(30, () =>
+            {
+                if (_raidBlockService.IsOn())
+                {
+                    Interface.Oxide.LogDebug("Raidlock active, enabling UI");
+
+                    guiService.ActivateGui();
+                }
+                else {
+                    Interface.Oxide.LogDebug("Raidlock disabled, destroying UI");
+                    guiService.DestroyGui();
+                }
+            });
             Interface.Oxide.LogDebug($"END Init WishRaidBlock {stopwatch.ElapsedMilliseconds}ms");
 
         }
@@ -57,10 +71,9 @@ namespace Oxide.Plugins
             Config.Clear();
 
             Config["RaidBlockStart"] = "23:30";           // 8:30 AM
-            Config["RaidBlockEnd"] = "12:00"; 
+            Config["RaidBlockEnd"] = "12:00";
             Config["RaidBlockOn"] = true;
             Config["RaidBlockInformPlayer"] = true;
-
             SaveConfig();
         }
         private void RegisterMessages()
@@ -73,7 +86,7 @@ namespace Oxide.Plugins
         {
             Subscribe("OnEntityTakeDamage");
         }
-        
+
         public string ShowTime(TimeSpan TimeIn)
         {
             return TimeIn.ToString(@"hh\:mm");
