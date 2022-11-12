@@ -16,7 +16,7 @@ namespace Oxide.Plugins
                 if (entity.OwnerID == 0) return null;
                 if (entity.OwnerID == info.InitiatorPlayer.userID) return null; // owner can damage own stuff
                  //TODO ALLOW TEAM TO DESTROY SHIT
-
+                 
                 if (info.InitiatorPlayer != null)
                 {
 

@@ -74,9 +74,9 @@ namespace Oxide.Plugins
             Subscribe("OnEntityTakeDamage");
         }
         
-        public string ShowTime(object TimeIn)
+        public string ShowTime(TimeSpan TimeIn)
         {
-            return DateTime.Parse(TimeIn.ToString()).ToString("hh:mm tt");
+            return TimeIn.ToString(@"hh\:mm");
         }
     }
 }

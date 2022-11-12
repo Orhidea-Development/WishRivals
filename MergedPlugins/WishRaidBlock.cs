@@ -64,6 +64,7 @@ namespace Oxide.Plugins
                 if (entity.OwnerID == 0) return null;
                 if (entity.OwnerID == info.InitiatorPlayer.userID) return null; // owner can damage own stuff
                 //TODO ALLOW TEAM TO DESTROY SHIT
+                
                 if (info.InitiatorPlayer != null)
                 {
                     
@@ -144,7 +145,7 @@ namespace Oxide.Plugins
             Config.Clear();
             
             Config["RaidBlockStart"] = "23:30";           // 8:30 AM
-            Config["RaidBlockEnd"] = "12:00 AM";
+            Config["RaidBlockEnd"] = "12:00";
             Config["RaidBlockOn"] = true;
             Config["RaidBlockInformPlayer"] = true;
             
@@ -160,9 +161,10 @@ namespace Oxide.Plugins
         {
             Subscribe("OnEntityTakeDamage");
         }
-        string ShowTime(object TimeIn)
+        
+        public string ShowTime(TimeSpan TimeIn)
         {
-            return DateTime.Parse(TimeIn.ToString()).ToString("hh:mm tt");
+            return TimeIn.ToString(@"hh\:mm");
         }
         #endregion
 
@@ -191,25 +193,10 @@ namespace Oxide.Plugins
                     { "nodamage", "You cannot cause damage between {starttime} and {endtime}." },
                     { "activated", "You cannot cause damage while Raid block is activated." },
                     { "starts", "Raid block starts at {starts}." },
-                    { "remains", "Raid block remains on for {remains}." },
                     { "onstatus", "Raid block is ON. It is active  from @ {starttime} until {endtime}" },
                     { "offstatus", "Raid block is {status}. It will NOT become active." },
-                    { "duration", "Raid block duration is {duration} minutes." },
-                    { "errorstart", "Error, please use 24 hour time format: i.e 08:00 for 8 am. 20:00 for 8pm." },
-                    { "errormin", "Error, please enter an integer i.e: 60 for 60 minutes." },
-                    { "errorhour", "Error, please enter an integer i.e: 2 for 180 minutes." },
                     { "activate", "- Raid Block is enabled"},
                     { "deactivate", "- Raid Block is disabled"},
-                    { "info", "- Raid block {act} inform players when they are unable to damage."},
-                    { "help1", "/lset start 8:00 am ~ Set start time for damage control." },
-                    { "help2", "/lset minutes 60    ~ Set duration in minutes for damage control."},
-                    { "help3", "/lset hours 12      ~ Set duration in hours for damage control."},
-                    { "help4", "/lset activate      ~ Force damage control ON, ignore config."},
-                    { "help5", "/lset info          ~ Toggle player message, when damage is denied."},
-                    { "help6", "/lset deactivate    ~ use configured times."},
-                    { "help7", "/lset off           ~ Turn off damage control."},
-                    { "help8", "/lset on            ~ Turn on damage control during set times. "},
-                    { "help9", "- starts at {starttime} ends at {endtime}. (Server's time)"}
                 }, _plugin, "en");
             }
         }
