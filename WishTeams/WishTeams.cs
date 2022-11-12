@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using Oxide.Core;
+using Oxide.Core.Libraries.Covalence;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using WishInfrastructure;
 
@@ -9,5 +11,9 @@ namespace Oxide.Plugins
 
     public partial class WishTeams : RustPlugin
     {
+        void Init()
+        {
+            this.
+        }
     }
 }

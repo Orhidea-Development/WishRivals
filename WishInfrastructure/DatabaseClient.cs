@@ -217,7 +217,6 @@ namespace WishInfrastructure
         {
             var returnValues = new List<KeyValuePair<string, T>>();
             var query = $"Select ifnull({key}, 0) as {key}, ifnull(name,'None') as name from {_tableName} ORDER BY {key} DESC LIMIT {take}";
-            Interface.Oxide.LogDebug(query);
 
             SqlLib.Query(Sql.Builder.Append(query), Sql_conn, list =>
             {
