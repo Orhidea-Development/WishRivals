@@ -73,6 +73,7 @@ namespace Oxide.Plugins
         {
             Subscribe("OnEntityTakeDamage");
         }
+        
         public string ShowTime(object TimeIn)
         {
             return DateTime.Parse(TimeIn.ToString()).ToString("hh:mm tt");
