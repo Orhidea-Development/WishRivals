@@ -271,7 +271,7 @@ namespace WishInfrastructure
             return (T)_sqlData[userid][key];
         }
 
-        T GetPlayerDataDeserialized<T>(string userid, string key)
+        public T GetPlayerDataDeserialized<T>(string userid, string key)
         {
             if (!IsKnownPlayer(userid)) return default(T);
 

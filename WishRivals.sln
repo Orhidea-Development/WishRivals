@@ -197,6 +197,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WishLeaderboards", "WishLea
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WishRaidBlock", "WishRaidBlock\WishRaidBlock.csproj", "{8A4FFEF2-4E38-40AD-9E6F-19FAE96EA9D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WishTeams", "WishTeams\WishTeams.csproj", "{EAA38C90-819F-435E-9FE6-EA8117C78C02}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -227,6 +229,10 @@ Global
 		{8A4FFEF2-4E38-40AD-9E6F-19FAE96EA9D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A4FFEF2-4E38-40AD-9E6F-19FAE96EA9D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A4FFEF2-4E38-40AD-9E6F-19FAE96EA9D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAA38C90-819F-435E-9FE6-EA8117C78C02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAA38C90-819F-435E-9FE6-EA8117C78C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAA38C90-819F-435E-9FE6-EA8117C78C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAA38C90-819F-435E-9FE6-EA8117C78C02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
