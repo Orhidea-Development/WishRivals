@@ -13,16 +13,24 @@ namespace WishTeams
         {
             _rustPlugin = rustPlugin;
             _dbClient = dbClient;
-            RelationshipManager.maxTeamSize = 100;
+            RelationshipManager.maxTeamSize = 30;
         }
 
         public void CreateTeam(ulong playerId, ulong teamId)
         {
             var player = BasePlayer.FindByID(playerId);
-            if (!CanJoinTeam(player))
+
+            if (player is null)
+            {
+                Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
+                return;
+            }
+
+            if (PreparePlayerToJoinRequiredTeam(player, teamId))
             {
                 return;
             }
+            
             RelationshipManager.PlayerTeam aTeam = RelationshipManager.ServerInstance.CreateTeam();
             aTeam.teamLeader = player.userID;
             aTeam.AddPlayer(player);
@@ -41,7 +49,13 @@ namespace WishTeams
         {
             var player = BasePlayer.FindByID(playerId);
 
-            if (!CanJoinTeam(player))
+            if (player is null)
+            {
+                Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
+                return;
+            }
+
+            if (PreparePlayerToJoinRequiredTeam(player, teamId))
             {
                 return;
             }
@@ -55,20 +69,37 @@ namespace WishTeams
             team.AddPlayer(player);
             player.TeamUpdate();
         }
-        public static bool CanJoinTeam(BasePlayer player)
+        public static bool CanJoinTeam(BasePlayer player, ulong teamId)
         {
-            if (player is null)
-            {
-                Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
-                return false;
-            }
-            if (player.currentTeam != 0UL)
-            {
-                Interface.Oxide.LogWarning("Player {0} already has a team", player.userID);
-                return false;
-            }
-            return true;
-        }
 
+            if (player.currentTeam == 0UL)
+            {
+                return true;
+            }
+            if (IsAlreadyInRequiredTeam(player, teamId))
+            {
+                Interface.Oxide.LogWarning("Player already is in the requested team {0}", player.userID);
+                return false;
+
+            }
+            Interface.Oxide.LogWarning("Player {0} already has a team", player.userID);
+            return false;
+        }
+        private bool PreparePlayerToJoinRequiredTeam(BasePlayer player, ulong teamId)
+        {
+            if (!CanJoinTeam(player, teamId))
+            {
+                if (IsAlreadyInRequiredTeam(player, teamId))
+                {
+                    return true;
+                }
+                player.ClearTeam();
+            }
+            return false;
+        }
+        private static bool IsAlreadyInRequiredTeam(BasePlayer player, ulong teamId)
+        {
+            return player.currentTeam == teamId;
+        }
     }
 }
