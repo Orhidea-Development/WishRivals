@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Oxide.Core.Libraries.Covalence;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WishStatistics.Utils;
 
 namespace Oxide.Plugins
 {
@@ -44,13 +46,20 @@ namespace Oxide.Plugins
         //Player Kills & Deaths
         private void OnPlayerDeath(BasePlayer player, HitInfo info)
         {
-            if (info == null || player == null || player.IsNpc)
+
+            if (info == null) return;
+            if (player == info.Initiator) return;
+
+            var attacker = info.InitiatorPlayer;
+
+            if (info == null || player == null || player.IsNpc || player.userID == attacker.userID ||
+            (attacker.Team == player.Team && attacker.Team != null))
                 return;
 
             Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
 
-            var attacker = info.InitiatorPlayer;
-            if (attacker == null || attacker.IsNpc)
+            if (attacker == null || attacker.IsNpc || player.userID == attacker.userID ||
+            (attacker.Team == player.Team && attacker.Team != null))
                 return;
 
             Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
@@ -59,13 +68,14 @@ namespace Oxide.Plugins
 
 
         //Damage done
-        object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo info)
+        object OnEntityTakeDamage(BasePlayer entity, HitInfo info)
         {
             if (info == null || entity == null || info?.HitEntity == null || entity.IsNpc)
                 return null;
 
             var attacker = info.InitiatorPlayer;
-            if (attacker == null || attacker.IsNpc)
+            if (attacker == null || attacker.IsNpc || entity.userID == attacker.userID ||
+            (attacker.Team == entity.Team && attacker.Team != null))
                 return null;
 
             Database.SetPlayerData(attacker.UserIDString.ToString(), "Hits", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Hits") + 1);
@@ -100,5 +110,21 @@ namespace Oxide.Plugins
         }
 
         //End Accuracy
+
+        //Hoodie Stuff
+        void OnPlayerConnected(BasePlayer player)
+        {
+            Puts("OnPlayerConnected works!");
+            
+        }
+        void OnUserRespawn(IPlayer player)
+        {
+            Puts("OnUserRespawn works!");
+        }
+        void OnUserRespawned(IPlayer player)
+        {
+            Puts("OnUserRespawned works!");
+        }
+        //End Hoodie Stuff
     }
 }
