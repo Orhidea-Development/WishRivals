@@ -121,7 +121,7 @@ namespace Oxide.Plugins
             
             stopwatch.Stop();
             GuiService guiService = new GuiService();
-            timer.Every(5, () =>
+            timer.Every(30, () =>
             {
                 if (_raidBlockService.IsOn())
                 {

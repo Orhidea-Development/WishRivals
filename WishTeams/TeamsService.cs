@@ -30,7 +30,7 @@ namespace WishTeams
             {
                 return;
             }
-            
+
             RelationshipManager.PlayerTeam aTeam = RelationshipManager.ServerInstance.CreateTeam();
             aTeam.teamLeader = player.userID;
             aTeam.AddPlayer(player);
@@ -41,7 +41,11 @@ namespace WishTeams
 
             player.TeamUpdate();
 
-            _dbClient.SetPlayerDataSerialized<ulong>(player.userID.ToString(), "TeamId", aTeam.teamID);
+            _dbClient.SetPlayerData(player.userID.ToString(), "TeamId", aTeam.teamID.ToString());
+            _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainID", player.userID.ToString());
+            _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainName", player.displayName);
+
+
         }
 
 

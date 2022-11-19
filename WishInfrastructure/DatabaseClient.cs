@@ -5,29 +5,34 @@ using Oxide.Core.MySql.Libraries;
 using Oxide.Plugins;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using WishInfrastructure.Models;
-using static Mono.Security.X509.X520;
 
 namespace WishInfrastructure
 {
     public class DatabaseClient
     {
-        private string _tableName;
+        private string _playerTableName;
+        private string _clanTableName;
         private readonly RustPlugin _plugin;
         private readonly DatabaseConfig _databaseConfig;
         MySql SqlLib = Interface.GetMod().GetLibrary<MySql>();
         Connection Sql_conn;
 
-        private List<string> _sqlColumns = new List<string>();
+        private List<string> _playerColumns = new List<string>();
+        private List<string> _clanColumns = new List<string>();
         private List<string> _changedPlayersData = new List<string>();
+        private List<string> _changedClansData = new List<string>();
 
-        Dictionary<string, Hash<string, object>> _sqlData = new Dictionary<string, Hash<string, object>>();
 
-        public DatabaseClient(string tableName, RustPlugin plugin, DatabaseConfig databaseConfig)
+        Dictionary<string, Hash<string, object>> _playerData = new Dictionary<string, Hash<string, object>>();
+        Dictionary<string, Hash<string, object>> _clanData = new Dictionary<string, Hash<string, object>>();
+
+
+        public DatabaseClient(string playerTableName, string clanTableName, RustPlugin plugin, DatabaseConfig databaseConfig)
         {
-            _tableName = tableName;
+            _playerTableName = playerTableName;
+            _clanTableName = clanTableName;
             _plugin = plugin;
             _databaseConfig = databaseConfig;
         }
@@ -49,13 +54,28 @@ namespace WishInfrastructure
                 }
             }
         }
-        public void LoadPlayer(string userid)
+        void LoadClans()
+        {
+            foreach (string clanid in KnownClans())
+            {
+                try
+                {
+                    LoadClan(clanid);
+                }
+                catch
+                {
+                    Interface.Oxide.LogWarning("Couldn't load " + clanid);
+                }
+            }
+        }
+
+        private void LoadClan(string clanid)
         {
             try
             {
-                if (!_sqlData.ContainsKey(userid)) _sqlData.Add(userid, new Hash<string, object>());
+                if (!_clanData.ContainsKey(clanid)) _clanData.Add(clanid, new Hash<string, object>());
                 bool newplayer = true;
-                SqlLib.Query(Sql.Builder.Append($"SELECT * from {_tableName} WHERE `userid` = '{userid}'"), Sql_conn, list =>
+                SqlLib.Query(Sql.Builder.Append($"SELECT * from {_clanTableName} WHERE `clanid` = '{clanid}'"), Sql_conn, list =>
                 {
                     if (list != null)
                     {
@@ -65,11 +85,11 @@ namespace WishInfrastructure
                             {
                                 if (p.Value is string)
                                 {
-                                    _sqlData[userid][p.Key] = (string)p.Value;
+                                    _clanData[clanid][p.Key] = (string)p.Value;
                                 }
                                 else if (p.Value is int)
                                 {
-                                    _sqlData[userid][p.Key] = (int)p.Value;
+                                    _clanData[clanid][p.Key] = (int)p.Value;
 
                                 }
                             }
@@ -78,8 +98,50 @@ namespace WishInfrastructure
                     }
                     if (newplayer)
                     {
-                        _sqlData[userid]["userid"] = userid;
-                        SqlLib.Insert(Sql.Builder.Append($"INSERT IGNORE INTO {_tableName} ( userid ) VALUES ( {userid} )"), Sql_conn);
+                        _clanData[clanid]["clanid"] = clanid;
+                        SqlLib.Insert(Sql.Builder.Append($"INSERT IGNORE INTO {_clanTableName} ( clanid ) VALUES ( {clanid} )"), Sql_conn);
+
+                        _changedClansData.Add(clanid);
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                Interface.Oxide.LogError(string.Format("Loading {0} got this error: {1}", clanid, e.Message));
+            }
+        }
+
+        public void LoadPlayer(string userid)
+        {
+            try
+            {
+                if (!_playerData.ContainsKey(userid)) _playerData.Add(userid, new Hash<string, object>());
+                bool newplayer = true;
+                SqlLib.Query(Sql.Builder.Append($"SELECT * from {_playerTableName} WHERE `userid` = '{userid}'"), Sql_conn, list =>
+                {
+                    if (list != null)
+                    {
+                        foreach (var entry in list)
+                        {
+                            foreach (var p in entry)
+                            {
+                                if (p.Value is string)
+                                {
+                                    _playerData[userid][p.Key] = (string)p.Value;
+                                }
+                                else if (p.Value is int)
+                                {
+                                    _playerData[userid][p.Key] = (int)p.Value;
+
+                                }
+                            }
+                            newplayer = false;
+                        }
+                    }
+                    if (newplayer)
+                    {
+                        _playerData[userid]["userid"] = userid;
+                        SqlLib.Insert(Sql.Builder.Append($"INSERT IGNORE INTO {_playerTableName} ( userid ) VALUES ( {userid} )"), Sql_conn);
 
                         _changedPlayersData.Add(userid);
                     }
@@ -94,13 +156,13 @@ namespace WishInfrastructure
         {
             if (!IsKnownPlayer(userid)) LoadPlayer(userid);
 
-            if (!(_sqlColumns.Contains(key)))
+            if (!(_playerColumns.Contains(key)))
             {
-                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` LONGTEXT"), Sql_conn);
-                _sqlColumns.Add(key);
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_playerTableName}` ADD `{key}` LONGTEXT"), Sql_conn);
+                _playerColumns.Add(key);
             }
 
-            _sqlData[userid][key] = data.ToString();
+            _playerData[userid][key] = data.ToString();
 
             if (!_changedPlayersData.Contains(userid))
                 _changedPlayersData.Add(userid);
@@ -111,25 +173,63 @@ namespace WishInfrastructure
             if (!IsKnownPlayer(userid)) LoadPlayer(userid);
 
 
-            if (!(_sqlColumns.Contains(key)))
+            if (!(_playerColumns.Contains(key)))
             {
-                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_tableName}` ADD `{key}` INT"), Sql_conn);
-                _sqlColumns.Add(key);
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_playerTableName}` ADD `{key}` INT"), Sql_conn);
+                _playerColumns.Add(key);
             }
 
-            _sqlData[userid][key] = data;
+            _playerData[userid][key] = data;
 
             if (!_changedPlayersData.Contains(userid))
                 _changedPlayersData.Add(userid);
 
         }
 
-        public void SetPlayerDataSerialized<T>(string userid, string key, T data)
+        public void SetPlayerDataSerialized<T>(string clanid, string key, T data)
         {
             string serilized = JsonConvert.SerializeObject(data);
-            SetPlayerData(userid, key, serilized);
+            SetPlayerData(clanid, key, serilized);
+        }
+        public void SetClanData(string clanid, string key, string data)
+        {
+            if (!IsKnownClan(clanid)) LoadClan(clanid);
+
+            if (!(_clanColumns.Contains(key)))
+            {
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_clanTableName}` ADD `{key}` LONGTEXT"), Sql_conn);
+                _clanColumns.Add(key);
+            }
+
+            _clanData[clanid][key] = data.ToString();
+
+            if (!_changedClansData.Contains(clanid))
+                _changedClansData.Add(clanid);
+
+        }
+        public void SetClanData(string clanid, string key, int data)
+        {
+            if (!IsKnownClan(clanid)) LoadClan(clanid);
+
+
+            if (!(_clanColumns.Contains(key)))
+            {
+                SqlLib.Insert(Sql.Builder.Append($"ALTER TABLE `{_clanTableName}` ADD `{key}` INT"), Sql_conn);
+                _clanColumns.Add(key);
+            }
+
+            _clanData[clanid][key] = data.ToString();
+
+            if (!_changedClansData.Contains(clanid))
+                _changedClansData.Add(clanid);
+
         }
 
+        public void SetClanDataSerialized<T>(string clanid, string key, T data)
+        {
+            string serilized = JsonConvert.SerializeObject(data);
+            SetClanData(clanid, key, serilized);
+        }
         void LoadData()
         {
             try
@@ -146,50 +246,93 @@ namespace WishInfrastructure
                     FatalError("Couldn't open the SQLite PlayerDatabase: " + Sql_conn.Con.State.ToString());
                     return;
                 }
-                SqlLib.Insert(Sql.Builder.Append("SET NAMES utf8mb4"), Sql_conn);
-                SqlLib.Insert(Sql.Builder.Append($"CREATE TABLE IF NOT EXISTS {_tableName} ( `id` int(11) NOT NULL, `userid` VARCHAR(17) NOT NULL );"), Sql_conn);
-                SqlLib.Query(Sql.Builder.Append($"desc {_tableName};"), Sql_conn, list =>
-                {
-                    if (list == null)
-                    {
-                        FatalError("Couldn't get columns. Database might be corrupted.");
-                        return;
-                    }
-                    foreach (var entry in list)
-                    {
-                        _sqlColumns.Add((string)entry["Field"]);
-                    }
-
-                });
-                SqlLib.Query(Sql.Builder.Append($"SELECT userid from {_tableName}"), Sql_conn, list =>
-                {
-                    if (list == null) return;
-                    foreach (var entry in list)
-                    {
-                        string steamid = (string)entry["userid"];
-                        if (steamid != "0")
-                            _sqlData.Add(steamid, new Hash<string, object>());
-                    }
-                    LoadPlayers();
-                });
-                Interface.Oxide.LogInfo($"Loading database for {_tableName}");
+                InitPlayers();
+                InitClans();
+                Interface.Oxide.LogInfo($"Loading database for {_playerTableName} and {_clanTableName}");
             }
             catch (Exception e)
             {
                 FatalError(e.Message);
             }
         }
-        public void SavePlayerDatabase()
+
+        private void InitClans()
+        {
+            SqlLib.Insert(Sql.Builder.Append("SET NAMES utf8mb4"), Sql_conn);
+            SqlLib.Insert(Sql.Builder.Append($"CREATE TABLE IF NOT EXISTS {_clanTableName} ( `clanid` VARCHAR(30) NOT NULL );"), Sql_conn);
+            SqlLib.Query(Sql.Builder.Append($"desc {_clanTableName};"), Sql_conn, list =>
+            {
+                if (list == null)
+                {
+                    FatalError("Couldn't get columns. Database might be corrupted.");
+                    return;
+                }
+                foreach (var entry in list)
+                {
+                    _clanColumns.Add((string)entry["Field"]);
+                }
+
+            });
+            SqlLib.Query(Sql.Builder.Append($"SELECT clanid from {_clanTableName}"), Sql_conn, list =>
+            {
+                if (list == null) return;
+                foreach (var entry in list)
+                {
+                    string clanid = (string)entry["clanid"];
+                    if (clanid != "0")
+                        _clanData.Add(clanid, new Hash<string, object>());
+                }
+                LoadClans();
+            });
+        }
+
+        private void InitPlayers()
+        {
+            SqlLib.Insert(Sql.Builder.Append("SET NAMES utf8mb4"), Sql_conn);
+            SqlLib.Insert(Sql.Builder.Append($"CREATE TABLE IF NOT EXISTS {_playerTableName} ( `id` int(11) NOT NULL, `userid` VARCHAR(17) NOT NULL );"), Sql_conn);
+            SqlLib.Query(Sql.Builder.Append($"desc {_playerTableName};"), Sql_conn, list =>
+            {
+                if (list == null)
+                {
+                    FatalError("Couldn't get columns. Database might be corrupted.");
+                    return;
+                }
+                foreach (var entry in list)
+                {
+                    _playerColumns.Add((string)entry["Field"]);
+                }
+
+            });
+            SqlLib.Query(Sql.Builder.Append($"SELECT userid from {_playerTableName}"), Sql_conn, list =>
+            {
+                if (list == null) return;
+                foreach (var entry in list)
+                {
+                    string steamid = (string)entry["userid"];
+                    if (steamid != "0")
+                        _playerData.Add(steamid, new Hash<string, object>());
+                }
+                LoadPlayers();
+            });
+        }
+
+        public void SaveDatabase()
         {
             Interface.Oxide.LogDebug($"Saving");
 
-            foreach (string userid in _changedPlayersData)
+            SavePlayerData();
+            SaveClanData();
+        }
+
+        private void SaveClanData()
+        {
+            foreach (string clanid in _changedClansData)
             {
                 try
                 {
-                    Interface.Oxide.LogDebug($"  Saving {userid}");
+                    Interface.Oxide.LogDebug($"  Saving {clanid}");
 
-                    var values = _sqlData[userid];
+                    var values = _clanData[clanid];
 
                     string arg = string.Empty;
                     var parms = new List<object>();
@@ -201,7 +344,39 @@ namespace WishInfrastructure
                         parms.Add(c.Value);
                     }
 
-                    SqlLib.Insert(Sql.Builder.Append($"UPDATE {_tableName} SET {arg} WHERE userid = {userid}", parms.ToArray()), Sql_conn);
+                    SqlLib.Insert(Sql.Builder.Append($"UPDATE {_clanTableName} SET {arg} WHERE clanid = {clanid}", parms.ToArray()), Sql_conn);
+
+                }
+                catch (Exception e)
+                {
+                    Interface.Oxide.LogWarning(e.Message);
+                    Interface.Oxide.LogWarning(e.StackTrace);
+                }
+            }
+            _changedClansData.Clear();
+        }
+
+        private void SavePlayerData()
+        {
+            foreach (string userid in _changedPlayersData)
+            {
+                try
+                {
+                    Interface.Oxide.LogDebug($"  Saving {userid}");
+
+                    var values = _playerData[userid];
+
+                    string arg = string.Empty;
+                    var parms = new List<object>();
+                    foreach (var c in values)
+                    {
+                        Interface.Oxide.LogDebug($"      Value: {c.Value}");
+
+                        arg += string.Format("{0}`{1}` = @{2}", arg == string.Empty ? string.Empty : ",", c.Key, parms.Count.ToString());
+                        parms.Add(c.Value);
+                    }
+
+                    SqlLib.Insert(Sql.Builder.Append($"UPDATE {_playerTableName} SET {arg} WHERE userid = {userid}", parms.ToArray()), Sql_conn);
 
                 }
                 catch (Exception e)
@@ -213,10 +388,11 @@ namespace WishInfrastructure
             }
             _changedPlayersData.Clear();
         }
+
         public List<KeyValuePair<string, T>> GetLeaderboard<T>(string key, int take = 5)
         {
             var returnValues = new List<KeyValuePair<string, T>>();
-            var query = $"Select ifnull({key}, 0) as {key}, ifnull(name,'None') as name from {_tableName} ORDER BY {key} DESC LIMIT {take}";
+            var query = $"Select ifnull({key}, 0) as {key}, ifnull(name,'None') as name from {_playerTableName} ORDER BY {key} DESC LIMIT {take}";
 
             SqlLib.Query(Sql.Builder.Append(query), Sql_conn, list =>
             {
@@ -247,49 +423,74 @@ namespace WishInfrastructure
                     returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
 
                 }
-                            if (returnValues.Count < take)
-            {
-                for (int i = 0; i < take - returnValues.Count; i++)
+                if (returnValues.Count < take)
                 {
-                    returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
+                    for (int i = 0; i < take - returnValues.Count; i++)
+                    {
+                        returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
+                    }
                 }
-            }
             });
 
 
             return returnValues;
         }
 
+        public T GetClanDataRaw<T>(string clandid, string key)
+        {
+            if (!IsKnownClan(clandid)) return default(T);
+
+            if (!_clanColumns.Contains(key)) return default(T);
+            if (_clanData[clandid] == null) return default(T);
+            if (_clanData[clandid][key] == null) return default(T);
+            return (T)_clanData[clandid][key];
+        }
+
+        public T GetClanDataDeserialized<T>(string clandid, string key)
+        {
+            if (!IsKnownClan(clandid)) return default(T);
+
+            if (!_clanColumns.Contains(key)) return default(T);
+            if (_clanData[clandid] == null) return default(T);
+            if (_clanData[clandid][key] == null) return default(T);
+            return JsonConvert.DeserializeObject<T>((string)_clanData[clandid][key]);
+        }
         public T GetPlayerDataRaw<T>(string userid, string key)
         {
             if (!IsKnownPlayer(userid)) return default(T);
 
-            if (!_sqlColumns.Contains(key)) return default(T);
-            if (_sqlData[userid] == null) return default(T);
-            if (_sqlData[userid][key] == null) return default(T);
-            return (T)_sqlData[userid][key];
+            if (!_playerColumns.Contains(key)) return default(T);
+            if (_playerData[userid] == null) return default(T);
+            if (_playerData[userid][key] == null) return default(T);
+            return (T)_playerData[userid][key];
         }
 
         public T GetPlayerDataDeserialized<T>(string userid, string key)
         {
             if (!IsKnownPlayer(userid)) return default(T);
 
-            if (!_sqlColumns.Contains(key)) return default(T);
-            if (_sqlData[userid] == null) return default(T);
-            if (_sqlData[userid][key] == null) return default(T);
-            return JsonConvert.DeserializeObject<T>((string)_sqlData[userid][key]);
+            if (!_playerColumns.Contains(key)) return default(T);
+            if (_playerData[userid] == null) return default(T);
+            if (_playerData[userid][key] == null) return default(T);
+            return JsonConvert.DeserializeObject<T>((string)_playerData[userid][key]);
         }
 
         public List<string> KnownPlayers()
         {
-            return _sqlData.Keys.ToList();
+            return _playerData.Keys.ToList();
         }
-
+        public List<string> KnownClans()
+        {
+            return _clanData.Keys.ToList();
+        }
         public bool IsKnownPlayer(string userid)
         {
-            return _sqlData.ContainsKey(userid);
+            return _playerData.ContainsKey(userid);
         }
-
+        public bool IsKnownClan(string userid)
+        {
+            return _clanData.ContainsKey(userid);
+        }
         void FatalError(string msg)
         {
             Interface.Oxide.LogError(msg);

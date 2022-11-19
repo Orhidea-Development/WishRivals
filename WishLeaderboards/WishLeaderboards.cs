@@ -34,7 +34,7 @@ namespace Oxide.Plugins
 
         private void InitInfrastructure()
         {
-            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database = new DatabaseClient("WishStats","WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
             Database.SetupDatabase();
         }
 

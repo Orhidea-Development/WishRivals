@@ -13,7 +13,7 @@ namespace Oxide.Plugins
             Stopwatch stopwatch = Stopwatch.StartNew();
             Interface.Oxide.LogDebug($"START Performing database save WishStatistics");
 
-            Database.SavePlayerDatabase();
+            Database.SaveDatabase();
 
             stopwatch.Stop();
             Interface.Oxide.LogDebug($"END Performing database save WishStatistics - {stopwatch.ElapsedMilliseconds}ms");

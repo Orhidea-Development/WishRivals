@@ -17,7 +17,7 @@ namespace Oxide.Plugins
         {
             _config = new ConfigSetup(this);
 
-            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database = new DatabaseClient("WishStats", "WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
 
             Database.SetupDatabase();
 
@@ -37,7 +37,7 @@ namespace Oxide.Plugins
 
             Interface.Oxide.LogDebug($"Performing database save");
 
-            Database.SavePlayerDatabase();
+            Database.SaveDatabase();
         }
 
         [ChatCommand("leaderboardtest")]

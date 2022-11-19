@@ -1,9 +1,11 @@
 //Reference: WishInfrastructure
 #define DEBUG
+using Melanchall.DryWetMidi.Interaction;
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,12 +14,13 @@ using System.Text;
 using System.Threading.Tasks;
 using WishInfrastructure;
 using WishInfrastructure.Models;
+using WishStatistics.Utils;
 
 
 //WishStatistics created with PluginMerge v(1.0.4.0) by MJSU @ https://github.com/dassjosh/Plugin.Merge
 namespace Oxide.Plugins
 {
-    [Info("WishStatistics", "Latvish", "0.0.2")]
+    [Info("WishStatistics", "Latvish&Zurius", "0.0.2")]
     [Description("WishStatistics")]
     public partial class WishStatistics : RustPlugin
     {
@@ -29,19 +32,29 @@ namespace Oxide.Plugins
         void Init()
         {
             _config = new ConfigSetup(this);
+            
+            SubscribeToEvents();
+            InitInfrastructure();
+            
+        }
+        
+        private void InitInfrastructure()
+        {
+            Subscribe("OnServerSave");
+            Subscribe("OnUserConnected");
+            Database = new DatabaseClient("WishStats","WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
+        }
+        
+        private void SubscribeToEvents()
+        {
             Subscribe("OnBigWheelWin");
             Subscribe("OnBigWheelLoss");
             Subscribe("CanMoveItem");
             Subscribe("CanLootEntity");
             Subscribe("OnItemSplit");
-            
-            //Database
-            Subscribe("OnServerSave");
-            Subscribe("OnUserConnected");
-            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
-            Database.SetupDatabase();
-            
         }
+        
         protected override void LoadDefaultConfig()
         {
             Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
@@ -49,24 +62,15 @@ namespace Oxide.Plugins
         #endregion
 
         #region EventListeners\DatabaseSaveEvents.cs
-        private List<KeyValuePair<string, int>> _proofOfConceptLeaderboards;
         void OnServerSave()
         {
-            Interface.Oxide.LogDebug($"Performing database save");
-            Database.SavePlayerDatabase();
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Interface.Oxide.LogDebug($"START Performing database save WishStatistics");
             
-            if (_proofOfConceptLeaderboards != null)
-            {
-                Interface.Oxide.LogDebug($"Proof of concept lb");
-                
-                for (int i = 0; i < _proofOfConceptLeaderboards.Count; i++)
-                {
-                    Interface.Oxide.LogDebug($" {i}) {_proofOfConceptLeaderboards[i].Key} {_proofOfConceptLeaderboards[i].Value} hits");
-                    
-                }
-                
-            }
-            _proofOfConceptLeaderboards = Database.GetLeaderboard<int>("Hits");
+            Database.SaveDatabase();
+            
+            stopwatch.Stop();
+            Interface.Oxide.LogDebug($"END Performing database save WishStatistics - {stopwatch.ElapsedMilliseconds}ms");
         }
         
         void OnUserConnected(IPlayer player)
@@ -117,13 +121,20 @@ namespace Oxide.Plugins
         //Player Kills & Deaths
         private void OnPlayerDeath(BasePlayer player, HitInfo info)
         {
-            if (info == null || player == null || player.IsNpc)
+            
+            if (info == null) return;
+            if (player == info.Initiator) return;
+            
+            var attacker = info.InitiatorPlayer;
+            
+            if (info == null || player == null || player.IsNpc || player.userID == attacker.userID ||
+            (attacker.Team == player.Team && attacker.Team != null))
             return;
             
             Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
             
-            var attacker = info.InitiatorPlayer;
-            if (attacker == null || attacker.IsNpc)
+            if (attacker == null || attacker.IsNpc || player.userID == attacker.userID ||
+            (attacker.Team == player.Team && attacker.Team != null))
             return;
             
             Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
@@ -132,13 +143,14 @@ namespace Oxide.Plugins
         
         
         //Damage done
-        object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo info)
+        object OnEntityTakeDamage(BasePlayer entity, HitInfo info)
         {
             if (info == null || entity == null || info?.HitEntity == null || entity.IsNpc)
             return null;
             
             var attacker = info.InitiatorPlayer;
-            if (attacker == null || attacker.IsNpc)
+            if (attacker == null || attacker.IsNpc || entity.userID == attacker.userID ||
+            (attacker.Team == entity.Team && attacker.Team != null))
             return null;
             
             Database.SetPlayerData(attacker.UserIDString.ToString(), "Hits", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Hits") + 1);
@@ -173,6 +185,22 @@ namespace Oxide.Plugins
         }
         
         //End Accuracy
+        
+        //Hoodie Stuff
+        void OnPlayerConnected(BasePlayer player)
+        {
+            Puts("OnPlayerConnected works!");
+            
+        }
+        void OnUserRespawn(IPlayer player)
+        {
+            Puts("OnUserRespawn works!");
+        }
+        void OnUserRespawned(IPlayer player)
+        {
+            Puts("OnUserRespawned works!");
+        }
+        //End Hoodie Stuff
         #endregion
 
         #region Models\ConfigFile.cs
@@ -221,6 +249,41 @@ namespace Oxide.Plugins
                     sql_user = "admin",
                     sql_pass = "password"
                 };
+            }
+        }
+        #endregion
+
+        #region Utils\PlayerUtil.cs
+        internal class PlayerUtil
+        {
+            
+            // Uz teams pl
+            // Vjg chekot hoodie skin pec skina
+            public bool checkHoodie(BasePlayer player)
+            {
+                var hoodie = (Item)ItemManager.CreateByItemID(1751045826, 1);
+                
+                if (isNaked(player))
+                return false;
+                
+                if (player.inventory.containerWear.FindItemByItemID(1751045826) != null)
+                return false;
+                else
+                
+                return true;
+            }
+            
+            //Kip uzvelk hoodie un locko slot.
+            public void addHoodie(BasePlayer player, String team)
+            {
+                player.inventory.containerWear.GetSlot(1).LockUnlock(true);
+                Item hoodie = (Item)ItemManager.CreateByItemID(1751045826, 1);
+                hoodie.MoveToContainer(player.inventory.containerWear, 1);
+                
+            }
+            public bool isNaked(BasePlayer player)
+            {
+                return player.inventory.containerWear.IsEmpty();
             }
         }
         #endregion

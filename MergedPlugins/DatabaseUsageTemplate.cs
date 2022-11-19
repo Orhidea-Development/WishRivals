@@ -45,7 +45,7 @@ namespace Oxide.Plugins
             
             Interface.Oxide.LogDebug($"Performing database save");
             
-            Database.SavePlayerDatabase();
+            Database.SaveDatabase();
         }
         
         [ChatCommand("leaderboardtest")]
@@ -78,7 +78,7 @@ namespace Oxide.Plugins
         void OnServerSave()
         {
             Interface.Oxide.LogDebug($"Performing database save");
-            Database.SavePlayerDatabase();
+            Database.SaveDatabase();
         }
         
         void OnUserConnected(IPlayer player)

@@ -24,7 +24,7 @@ namespace Oxide.Plugins
         {
             Subscribe("OnServerSave");
             Subscribe("OnUserConnected");
-            Database = new DatabaseClient("WishStats", this, _config.ConfigFile.DatabaseConfig);
+            Database = new DatabaseClient("WishStats","WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
             Database.SetupDatabase();
         }
 
