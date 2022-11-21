@@ -88,7 +88,7 @@ namespace Oxide.Plugins
         //Damage done
         object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo info)
         {
-            if (info == null || entity == null || info?.HitEntity == null)
+            if (info == null || entity == null || info?.HitEntity == null || entity.IsNpc)
                 return null;
 
             var attacker = info.InitiatorPlayer;
