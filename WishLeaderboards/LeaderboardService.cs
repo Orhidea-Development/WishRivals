@@ -33,6 +33,13 @@ namespace Oxide.Plugins
                 InitLeaderboard("Kills"),
                 InitLeaderboard("ScrapWon"),
                 InitLeaderboard("ScrapLost"),
+                InitLeaderboard("TreesFarmed"),
+                InitLeaderboard("OresFarmed"),
+                InitLeaderboard("ItemsCrafted"),
+                InitLeaderboard("AnimalKills"),
+                InitLeaderboard("NpcKills"),
+                InitLeaderboard("Revives")
+                
             };
         }
         private Leaderboard InitLeaderboard(string name)

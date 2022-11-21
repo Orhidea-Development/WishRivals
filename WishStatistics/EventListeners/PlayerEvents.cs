@@ -1,10 +1,8 @@
-﻿using Oxide.Core.Libraries.Covalence;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WishStatistics.Utils;
 
 namespace Oxide.Plugins
 {
@@ -43,44 +41,62 @@ namespace Oxide.Plugins
         //Scrap Gaming End
 
 
-        //Player Kills & Deaths
-        private void OnPlayerDeath(BasePlayer player, HitInfo info)
+        //Kills & Deaths
+        object OnPlayerDeath(BasePlayer player, HitInfo info)
         {
+            // Check for null or NPC
+            if (player == null || player.IsNpc || !player.userID.IsSteamId()) return null;
+            // If Suicide Tracking Enabled Ingnore Death
+            if (player == info?.Initiator) return null;
+            
+            Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
+            
+            var attacker = info.InitiatorPlayer;
+            if (attacker != null || attacker.userID.IsSteamId()) 
+            {
+                Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
+            }
+            return null;
+        }
+        //End Kills & Deaths
 
-            if (info == null) return;
-            if (player == info.Initiator) return;
+
+        //Npc & animal kills
+        void OnEntityDeath(BaseCombatEntity entity, HitInfo info)
+        {
+			if (entity == null) return;
+			if (info == null) return;
+			if (info.Initiator == null) return;
+            if(entity == info.Initiator) return;
 
             var attacker = info.InitiatorPlayer;
+            if (attacker == null || !attacker.userID.IsSteamId()) return;
 
-            if (info == null || player == null || player.IsNpc || player.userID == attacker.userID ||
-            (attacker.Team == player.Team && attacker.Team != null))
-                return;
+            if (entity is BaseAnimalNPC)
+            {
+                Database.SetPlayerData(attacker.UserIDString.ToString(), "AnimalKills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "AnimalKills") + 1);
+            }else{
 
-            Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
-
-            if (attacker == null || attacker.IsNpc || player.userID == attacker.userID ||
-            (attacker.Team == player.Team && attacker.Team != null))
-                return;
-
-            Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
+            if (entity is ScientistNPC)
+                {
+                    Database.SetPlayerData(attacker.UserIDString.ToString(), "NpcKills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "NpcKills") + 1);
+                }
+            }
         }
-        //End Player Kills & Deaths
-
+        //End Npc & animal kills
 
         //Damage done
-        object OnEntityTakeDamage(BasePlayer entity, HitInfo info)
+        object OnEntityTakeDamage(BaseCombatEntity entity, HitInfo info)
         {
-            if (info == null || entity == null || info?.HitEntity == null || entity.IsNpc)
+            if (info == null || entity == null || info?.HitEntity == null)
                 return null;
 
             var attacker = info.InitiatorPlayer;
-            if (attacker == null || attacker.IsNpc || entity.userID == attacker.userID ||
-            (attacker.Team == entity.Team && attacker.Team != null))
+            if (attacker == null || !attacker.userID.IsSteamId())
                 return null;
 
             Database.SetPlayerData(attacker.UserIDString.ToString(), "Hits", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Hits") + 1);
 
-            if (!info.HitEntity.IsNpc)
             {
                 NextTick(() =>
                 {
@@ -92,39 +108,55 @@ namespace Oxide.Plugins
                 {
                     Database.SetPlayerData(attacker.UserIDString.ToString(), "Headshots", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Headshots") + 1);
                 }
+                return null;
             }
-
-
-            return null;
+            //End Damage done
         }
-        //End Damage done
 
         //Accuracy
         //Shots:hits 
         void OnWeaponFired(BaseProjectile projectile, BasePlayer player, ItemModProjectile mod, ProtoBuf.ProjectileShoot projectiles)
         {
-            if (projectile == null || player == null)
-                return;
+            if (projectile == null || player == null || !player.userID.IsSteamId())
+                 return;
 
             Database.SetPlayerData(player.UserIDString.ToString(), "Shots", Database.GetPlayerDataRaw<int>(player.UserIDString, "Shots") + 1);
         }
-
         //End Accuracy
 
-        //Hoodie Stuff
-        void OnPlayerConnected(BasePlayer player)
+        //Revives
+        object OnPlayerRevive(BasePlayer reviver, BasePlayer player)
         {
-            Puts("OnPlayerConnected works!");
-            
+            if (reviver == null || player == null) return null;
+
+            Database.SetPlayerData(reviver.UserIDString.ToString(), "Revives", Database.GetPlayerDataRaw<int>(reviver.UserIDString, "Revives") + 1);
+            return null;
         }
-        void OnUserRespawn(IPlayer player)
+        //End Revives
+
+        //Crafts
+        void OnItemCraftFinished(ItemCraftTask task, Item item)
         {
-            Puts("OnUserRespawn works!");
+            Database.SetPlayerData(task.owner.UserIDString.ToString(), "ItemsCrafted", Database.GetPlayerDataRaw<int>(task.owner.UserIDString, "ItemsCrafted") + 1);
         }
-        void OnUserRespawned(IPlayer player)
-        {
-            Puts("OnUserRespawned works!");
-        }
-        //End Hoodie Stuff
+        //End Crafting
+
+
+
+        //wood & ores mined
+		void OnDispenserBonus(ResourceDispenser dispenser, BasePlayer player, Item item)
+		{
+			if (player == null || !player.userID.IsSteamId() || dispenser == null || item == null) return;
+			var gatherType = dispenser.gatherType;
+			if (gatherType == ResourceDispenser.GatherType.Tree)
+			{
+                Database.SetPlayerData(player.UserIDString.ToString(), "TreesFarmed", Database.GetPlayerDataRaw<int>(player.UserIDString, "TreesFarmed") + 1);
+			}
+			else if (gatherType == ResourceDispenser.GatherType.Ore)
+			{
+                Database.SetPlayerData(player.UserIDString.ToString(), "OresFarmed", Database.GetPlayerDataRaw<int>(player.UserIDString, "OresFarmed") + 1);
+			}
+		}
+        //end woood & ores mined
     }
 }
