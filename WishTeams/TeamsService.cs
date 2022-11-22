@@ -20,7 +20,7 @@ namespace WishTeams
         {
             var player = BasePlayer.FindByID(playerId);
 
-            if (player is null)
+            if (player == null)
             {
                 Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
                 return;
@@ -53,7 +53,7 @@ namespace WishTeams
         {
             var player = BasePlayer.FindByID(playerId);
 
-            if (player is null)
+            if (player == null)
             {
                 Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
                 return;
@@ -105,5 +105,7 @@ namespace WishTeams
         {
             return player.currentTeam == teamId;
         }
+
+
     }
 }

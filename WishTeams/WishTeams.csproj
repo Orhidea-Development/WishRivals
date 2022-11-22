@@ -171,6 +171,9 @@
     <Reference Include="Oxide.CSharp">
       <HintPath>..\Refrences\Oxide.CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Oxide.Ext.Discord">
+      <HintPath>..\Refrences\Oxide.Ext.Discord.dll</HintPath>
+    </Reference>
     <Reference Include="Oxide.MySql">
       <HintPath>..\Refrences\Oxide.MySql.dll</HintPath>
     </Reference>
@@ -435,6 +438,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DiscordHook.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TeamsService.cs" />
     <Compile Include="WishTeams.cs" />
@@ -444,6 +448,9 @@
       <Project>{f7225d2d-fe34-48b4-aa8d-3e9bfc5140b1}</Project>
       <Name>WishInfrastructure</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="merge.yml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

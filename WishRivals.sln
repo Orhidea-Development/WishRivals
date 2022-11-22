@@ -56,6 +56,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Refrences", "Refrences", "{
 		Refrences\Novell.Directory.Ldap.dll = Refrences\Novell.Directory.Ldap.dll
 		Refrences\Oxide.Core.dll = Refrences\Oxide.Core.dll
 		Refrences\Oxide.CSharp.dll = Refrences\Oxide.CSharp.dll
+		Refrences\Oxide.Ext.Discord.dll = Refrences\Oxide.Ext.Discord.dll
 		Refrences\Oxide.MySql.dll = Refrences\Oxide.MySql.dll
 		Refrences\Oxide.References.dll = Refrences\Oxide.References.dll
 		Refrences\Oxide.Rust.dll = Refrences\Oxide.Rust.dll

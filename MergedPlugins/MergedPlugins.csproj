@@ -441,6 +441,7 @@
     <Compile Include="WishLeaderboards.cs" />
     <Compile Include="WishRaidBlock.cs" />
     <Compile Include="WishStatistics.cs" />
+    <Compile Include="WishTeams.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\WishInfrastructure\WishInfrastructure.csproj">
