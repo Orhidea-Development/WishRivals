@@ -7,14 +7,19 @@ using Oxide.Ext.Discord.Entities;
 using Oxide.Ext.Discord.Entities.Gatway;
 using Oxide.Ext.Discord.Entities.Gatway.Events;
 using Oxide.Ext.Discord.Entities.Messages;
+using Oxide.Ext.Discord.Entities.Permissions;
 using Oxide.Ext.Discord.Libraries.Command;
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace Oxide.Plugins
 {
     public partial class WishTeams
     {
+        [DiscordClient] private DiscordClient _client;
+
         private const string _apiToken = "MTA0NDY1NzUyODA1Njg0MDI5Mg.GRYxs_.zewj6IbADCy_EMxjWxlTFZfRc_PhvBNruGrJw0";
         private readonly DiscordCommand _dcCommands = Interface.Oxide.GetLibrary<DiscordCommand>();
 
@@ -26,13 +31,12 @@ namespace Oxide.Plugins
                 LogLevel = Ext.Discord.Logging.DiscordLogLevel.Debug,
             };
             settings.Intents |= GatewayIntents.GuildMessages;
-            settings.Intents |= GatewayIntents.DirectMessages;
+            //settings.Intents |= GatewayIntents.DirectMessages;
             settings.Intents |= GatewayIntents.Guilds;
-            settings.Intents |= GatewayIntents.GuildIntegrations;
-            settings.Intents |= GatewayIntents.GuildPresences;
+            //settings.Intents |= GatewayIntents.GuildIntegrations;
+            //settings.Intents |= GatewayIntents.GuildPresences;
             settings.Intents |= GatewayIntents.GuildMembers;
             settings.Intents |= GatewayIntents.GuildMessageTyping;
-            settings.Intents |= GatewayIntents.GuildWebhooks;
             settings.Intents |= GatewayIntents.DirectMessageTyping;
 
 
@@ -43,11 +47,6 @@ namespace Oxide.Plugins
 
         }
 
-        //private void RegisterCommands()
-        //{
-
-        //}
-
         [HookMethod(DiscordExtHooks.OnDiscordGatewayReady)]
         public void OnDiscordGatewayReady(GatewayReadyEvent ready)
         {
@@ -56,12 +55,104 @@ namespace Oxide.Plugins
 
         private void RegisterCommand(DiscordMessage message, string cmd, string[] args)
         {
-            Interface.Oxide.LogDebug($"Recieved a command1");
+            Interface.Oxide.LogDebug($"Recieved register call from  {message.Author.Username}");
 
+            if (args == null || args.Length != 1)
+            {
+                InvalidArgs(message);
+                return;
+            }
+            if (!ValidSteamId64(args[0]))
+            {
+                NotValidId(message, args);
+                return;
+            }
+
+            var userRoles = _client.Bot.GetGuild(message.GuildId).Roles.Where(x => message.Member.Roles.Contains(x.Key));
+            var teamId = GetTeamId(userRoles);
+            if (teamId == 0)
+            {
+                NoTeam(message);
+                return;
+            }
+
+            if (IsLeader(userRoles))
+            {
+                Interface.Oxide.LogDebug($"User {message.Member.DisplayName} is leader");
+                if (_teamsService.TeamExists(teamId) >= 1)
+                {
+                    AlreadyExists(message, teamId);
+                    return;
+                }
+                else
+                {
+                    //First succes story
+                    CreateTeam(message, args, teamId);
+                }
+            }
+            else
+            {
+                _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
+            }
+
+
+            Whitelist(args[0]);
             message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]}");
-            permission.GrantUserPermission(args[0], permAllow, this);
+            message.DeleteMessage(_client);
         }
 
+        private void AlreadyExists(DiscordMessage message, ulong teamId)
+        {
+            Interface.Oxide.LogDebug($"Team {teamId} already exists");
+            message.Author.SendDirectMessage(_client, $"Team {teamId} already exists");
+            message.DeleteMessage(_client);
+        }
+
+        private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
+        {
+            Interface.Oxide.LogDebug($"Team {teamId} does not exist");
+            _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
+            message.Author.SendDirectMessage(_client, $"Team {teamId} created");
+            message.DeleteMessage(_client);
+        }
+
+        private void NoTeam(DiscordMessage message)
+        {
+            Interface.Oxide.LogDebug($"User has not joined a team {message.Author.Username}");
+            message.Author.SendDirectMessage(_client, $"Please join a team or contact admin");
+            message.DeleteMessage(_client);
+        }
+
+        private ulong GetTeamId(IEnumerable<KeyValuePair<Snowflake, DiscordRole>> userRoles)
+        {
+            return userRoles.FirstOrDefault(x => x.Value.Name.Contains("team")).Key;
+        }
+
+        private bool IsLeader(IEnumerable<KeyValuePair<Snowflake, DiscordRole>> userRoles)
+        {
+            return userRoles.Any(x => x.Value.Name.Contains("Leader"));
+        }
+
+        private void InvalidArgs(DiscordMessage message)
+        {
+            Interface.Oxide.LogDebug($"Invalid args for register user {message.Author.Username}");
+
+            message.Author.SendDirectMessage(_client, $"Please use format /register <steamid64>");
+            message.DeleteMessage(_client);
+        }
+
+        private void NotValidId(DiscordMessage message, string[] args)
+        {
+            Interface.Oxide.LogDebug($"Invalid steamid64 for  user {message.Author.Username} steamid64 {args[0]}");
+
+            message.Author.SendDirectMessage(_client, $"Please enter valid steam64id");
+            message.DeleteMessage(_client);
+        }
+
+        private bool ValidSteamId64(string steamId64)
+        {
+            return steamId64.Length == 17 && steamId64.All(char.IsDigit);
+        }
         protected override void LoadDefaultMessages()
         {
             lang.RegisterMessages(new Dictionary<string, string>
@@ -72,14 +163,13 @@ namespace Oxide.Plugins
         }
         public void RegisterDiscordLangCommand(string command, string langKey, bool direct, bool guild, List<Snowflake> allowedChannels)
         {
-            if (direct)
-            {
-                _dcCommands.AddDirectMessageLocalizedCommand(langKey, this, command);
-            }
+            //if (direct)
+            //{
+            //    _dcCommands.AddDirectMessageLocalizedCommand(langKey, this, command);
+            //}
 
             if (guild)
             {
-                // _dcCommands.AddGuildCommand("register", this, new List<Snowflake>() { (Snowflake)897528550083665985}, command);
                 _dcCommands.AddGuildLocalizedCommand(langKey, this, allowedChannels, command);
             }
         }

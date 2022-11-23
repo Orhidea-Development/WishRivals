@@ -1,6 +1,7 @@
 //Reference: WishInfrastructure
 #define DEBUG
 using Oxide.Core;
+using Oxide.Core.Libraries.Covalence;
 using Oxide.Core.Plugins;
 using Oxide.Ext.Discord;
 using Oxide.Ext.Discord.Attributes;
@@ -9,10 +10,15 @@ using Oxide.Ext.Discord.Entities;
 using Oxide.Ext.Discord.Entities.Gatway;
 using Oxide.Ext.Discord.Entities.Gatway.Events;
 using Oxide.Ext.Discord.Entities.Messages;
+using Oxide.Ext.Discord.Entities.Permissions;
 using Oxide.Ext.Discord.Libraries.Command;
+using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using WishInfrastructure;
+using WishInfrastructure.Models;
 
 
 //WishTeams created with PluginMerge v(1.0.4.0) by MJSU @ https://github.com/dassjosh/Plugin.Merge
@@ -23,6 +29,8 @@ namespace Oxide.Plugins
     public partial class WishTeams : RustPlugin
     {
         #region DiscordHook.cs
+        [DiscordClient] private DiscordClient _client;
+        
         private const string _apiToken = "MTA0NDY1NzUyODA1Njg0MDI5Mg.GRYxs_.zewj6IbADCy_EMxjWxlTFZfRc_PhvBNruGrJw0";
         private readonly DiscordCommand _dcCommands = Interface.Oxide.GetLibrary<DiscordCommand>();
         
@@ -34,13 +42,12 @@ namespace Oxide.Plugins
                 LogLevel = Ext.Discord.Logging.DiscordLogLevel.Debug,
             };
             settings.Intents |= GatewayIntents.GuildMessages;
-            settings.Intents |= GatewayIntents.DirectMessages;
+            //settings.Intents |= GatewayIntents.DirectMessages;
             settings.Intents |= GatewayIntents.Guilds;
-            settings.Intents |= GatewayIntents.GuildIntegrations;
-            settings.Intents |= GatewayIntents.GuildPresences;
+            //settings.Intents |= GatewayIntents.GuildIntegrations;
+            //settings.Intents |= GatewayIntents.GuildPresences;
             settings.Intents |= GatewayIntents.GuildMembers;
             settings.Intents |= GatewayIntents.GuildMessageTyping;
-            settings.Intents |= GatewayIntents.GuildWebhooks;
             settings.Intents |= GatewayIntents.DirectMessageTyping;
             
             
@@ -51,11 +58,6 @@ namespace Oxide.Plugins
             
         }
         
-        //private void RegisterCommands()
-        //{
-            
-        //}
-        
         [HookMethod(DiscordExtHooks.OnDiscordGatewayReady)]
         public void OnDiscordGatewayReady(GatewayReadyEvent ready)
         {
@@ -64,12 +66,104 @@ namespace Oxide.Plugins
         
         private void RegisterCommand(DiscordMessage message, string cmd, string[] args)
         {
-            Interface.Oxide.LogDebug($"Recieved a command1");
+            Interface.Oxide.LogDebug($"Recieved register call from  {message.Author.Username}");
             
+            if (args == null || args.Length != 1)
+            {
+                InvalidArgs(message);
+                return;
+            }
+            if (!ValidSteamId64(args[0]))
+            {
+                NotValidId(message, args);
+                return;
+            }
+            
+            var userRoles = _client.Bot.GetGuild(message.GuildId).Roles.Where(x => message.Member.Roles.Contains(x.Key));
+            var teamId = GetTeamId(userRoles);
+            if (teamId == 0)
+            {
+                NoTeam(message);
+                return;
+            }
+            
+            if (IsLeader(userRoles))
+            {
+                Interface.Oxide.LogDebug($"User {message.Member.DisplayName} is leader");
+                if (_teamsService.TeamExists(teamId) >= 1)
+                {
+                    AlreadyExists(message, teamId);
+                    return;
+                }
+                else
+                {
+                    //First succes story
+                    CreateTeam(message, args, teamId);
+                }
+            }
+            else
+            {
+                _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
+            }
+            
+            
+            Whitelist(args[0]);
             message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]}");
-            permission.GrantUserPermission(args[0], permAllow, this);
+            message.DeleteMessage(_client);
         }
         
+        private void AlreadyExists(DiscordMessage message, ulong teamId)
+        {
+            Interface.Oxide.LogDebug($"Team {teamId} already exists");
+            message.Author.SendDirectMessage(_client, $"Team {teamId} already exists");
+            message.DeleteMessage(_client);
+        }
+        
+        private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
+        {
+            Interface.Oxide.LogDebug($"Team {teamId} does not exist");
+            _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
+            message.Author.SendDirectMessage(_client, $"Team {teamId} created");
+            message.DeleteMessage(_client);
+        }
+        
+        private void NoTeam(DiscordMessage message)
+        {
+            Interface.Oxide.LogDebug($"User has not joined a team {message.Author.Username}");
+            message.Author.SendDirectMessage(_client, $"Please join a team or contact admin");
+            message.DeleteMessage(_client);
+        }
+        
+        private ulong GetTeamId(IEnumerable<KeyValuePair<Snowflake, DiscordRole>> userRoles)
+        {
+            return userRoles.FirstOrDefault(x => x.Value.Name.Contains("team")).Key;
+        }
+        
+        private bool IsLeader(IEnumerable<KeyValuePair<Snowflake, DiscordRole>> userRoles)
+        {
+            return userRoles.Any(x => x.Value.Name.Contains("Leader"));
+        }
+        
+        private void InvalidArgs(DiscordMessage message)
+        {
+            Interface.Oxide.LogDebug($"Invalid args for register user {message.Author.Username}");
+            
+            message.Author.SendDirectMessage(_client, $"Please use format /register <steamid64>");
+            message.DeleteMessage(_client);
+        }
+        
+        private void NotValidId(DiscordMessage message, string[] args)
+        {
+            Interface.Oxide.LogDebug($"Invalid steamid64 for  user {message.Author.Username} steamid64 {args[0]}");
+            
+            message.Author.SendDirectMessage(_client, $"Please enter valid steam64id");
+            message.DeleteMessage(_client);
+        }
+        
+        private bool ValidSteamId64(string steamId64)
+        {
+            return steamId64.Length == 17 && steamId64.All(char.IsDigit);
+        }
         protected override void LoadDefaultMessages()
         {
             lang.RegisterMessages(new Dictionary<string, string>
@@ -80,14 +174,13 @@ namespace Oxide.Plugins
         }
         public void RegisterDiscordLangCommand(string command, string langKey, bool direct, bool guild, List<Snowflake> allowedChannels)
         {
-            if (direct)
-            {
-                _dcCommands.AddDirectMessageLocalizedCommand(langKey, this, command);
-            }
+            //if (direct)
+            //{
+                //    _dcCommands.AddDirectMessageLocalizedCommand(langKey, this, command);
+            //}
             
             if (guild)
             {
-                // _dcCommands.AddGuildCommand("register", this, new List<Snowflake>() { (Snowflake)897528550083665985}, command);
                 _dcCommands.AddGuildLocalizedCommand(langKey, this, allowedChannels, command);
             }
         }
@@ -97,17 +190,57 @@ namespace Oxide.Plugins
         }
         #endregion
 
+        #region WhitelistService.cs
+        object CanUserLogin(string name, string id)
+        {
+            Interface.Oxide.LogDebug($"Checking if user {name} can login");
+            if (!IsWhitelisted(id))
+            {
+                return "You are not whitelisted";
+            }
+            var userId = ulong.Parse(id);
+            var teamId = _teamsService.GetPlayersTeam(userId);
+            if (_teamsService.TeamExists(teamId) != 2)
+            {
+                if (!_teamsService.IsCaptain(userId, teamId))
+                {
+                    return "Ask your leader to join server first";
+                }
+            }
+            return null;
+        }
+        bool IsWhitelisted(string id)
+        {
+            Interface.Oxide.LogDebug($"Checking if user can login {permission.UserHasPermission(id, permAllow)}");
+            return permission.UserHasPermission(id, permAllow);
+        }
+        void Whitelist(string id)
+        {
+            permission.GrantUserPermission(id, permAllow, this);
+        }
+        #endregion
+
         #region WishTeams.cs
         #region Class Fields
         
-        [DiscordClient] private DiscordClient _client;
         const string permAllow = "whitelist.allow";
-        
+        public static DatabaseClient Database { get; set; }
+        private ConfigSetup _config;
+        private TeamsService _teamsService;
         #endregion
         void Init()
         {
-            permission.RegisterPermission(permAllow, this);
+            _config = new ConfigSetup(this);
             
+            permission.RegisterPermission(permAllow, this);
+            InitInfrastructure();
+            _teamsService = new TeamsService(this, Database);
+        }
+        
+        private void InitInfrastructure()
+        {
+            Database = new DatabaseClient("WishTeams", "WishTeamsClan", this, _config.ConfigFile.DatabaseConfig);
+            Database.SetupDatabase();
         }
         
         private void OnServerInitialized()
@@ -121,17 +254,33 @@ namespace Oxide.Plugins
             _client.Disconnect();
             
         }
-        object CanUserLogin(string name, string id)
+        protected override void LoadDefaultConfig()
         {
-            Interface.Oxide.LogDebug($"Checking if user {name} can login");
-            
-            return !IsWhitelisted(id) ? "You are not whitelisted" : null;
+            Config.WriteObject(ConfigSetup.GetDefaultConfig(), true);
         }
-        bool IsWhitelisted(string id)
+        void OnUserConnected(IPlayer player)
         {
-            Interface.Oxide.LogDebug($"Checking if user can login {permission.UserHasPermission(id, permAllow)}");
+            if (!Database.IsKnownPlayer(player.Id))
+            {
+                Database.LoadPlayer(player.Id);
+            }
             
-            return permission.UserHasPermission(id, permAllow);
+            Database.SetPlayerData(player.Id, "name", player.Name);
+            
+        }
+        #endregion
+
+        #region EventListeners\ServerEvents.cs
+        void OnServerSave()
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Interface.Oxide.LogDebug($"START Performing database save WishTeams");
+            
+            Database.SaveDatabase();
+            
+            stopwatch.Stop();
+            Interface.Oxide.LogDebug($"END Performing database save WishTeams - {stopwatch.ElapsedMilliseconds}ms");
+            
         }
         #endregion
 
@@ -147,9 +296,35 @@ namespace Oxide.Plugins
                 _dbClient = dbClient;
                 RelationshipManager.maxTeamSize = 30;
             }
+            //0 nav creatota 1 ir creatota nav leaderis ienacis serveri 2 viss safe
+            public int TeamExists(ulong teamId)
+            {
+                return _dbClient.GetClanDataRaw<int>(teamId.ToString(), "Exists");
+            }
+            public void InitTeamJoin(ulong playerId, ulong teamId)
+            {
+                _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
+                
+            }
+            public bool IsCaptain(ulong playerId, ulong teamId)
+            {
+                return _dbClient.GetClanDataRaw<string>(teamId.ToString(), "CaptainID") == playerId.ToString();
+                
+            }
+            public void InitTeamCreation(ulong playerId, ulong teamId)
+            {
+                _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
+                _dbClient.SetClanData(teamId.ToString(), "CaptainID", playerId.ToString());
+                _dbClient.SetClanData(teamId.ToString(), "Exists", 1);
+            }
+            public ulong GetPlayersTeam(ulong playerId)
+            {
+                return _dbClient.GetPlayerDataRaw<ulong>(playerId.ToString(), "TeamId");
+            }
             
             public void CreateTeam(ulong playerId, ulong teamId)
             {
+                Interface.Oxide.LogDebug($"Creating team with id {teamId}, and leader {playerId}");
                 var player = BasePlayer.FindByID(playerId);
                 
                 if (player == null)
@@ -174,8 +349,11 @@ namespace Oxide.Plugins
                 player.TeamUpdate();
                 
                 _dbClient.SetPlayerData(player.userID.ToString(), "TeamId", aTeam.teamID.ToString());
+                _dbClient.SetPlayerData(player.userID.ToString(), "HasTeam", 1);
+                
                 _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainID", player.userID.ToString());
                 _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainName", player.displayName);
+                _dbClient.SetClanData(aTeam.teamID.ToString(), "exists", 1);
                 
                 
             }
@@ -239,6 +417,56 @@ namespace Oxide.Plugins
             }
             
             
+        }
+        #endregion
+
+        #region Models\ConfigFile.cs
+        public class ConfigFile
+        {
+            public DatabaseConfig DatabaseConfig { get; set; }
+            
+        }
+        #endregion
+
+        #region Startup\ConfigSetup.cs
+        public class ConfigSetup
+        {
+            
+            
+            private readonly RustPlugin _plugin;
+            public ConfigFile ConfigFile { get; set; }
+            
+            
+            internal ConfigSetup(RustPlugin plugin)
+            {
+                _plugin = plugin;
+                Init();
+            }
+            
+            private void Init()
+            {
+                ConfigFile = _plugin.Config.ReadObject<ConfigFile>();
+            }
+            
+            internal static object GetDefaultConfig()
+            {
+                return new ConfigFile()
+                {
+                    DatabaseConfig = GetDefaultDatabaseConfig(),
+                };
+            }
+            
+            private static DatabaseConfig GetDefaultDatabaseConfig()
+            {
+                return new DatabaseConfig
+                {
+                    sql_host = "localhost",
+                    sql_port = 1234,
+                    sql_db = "rust",
+                    sql_user = "admin",
+                    sql_pass = "password"
+                };
+            }
         }
         #endregion
 

@@ -1,8 +1,7 @@
 ﻿using Oxide.Core;
-using Oxide.Plugins;
 using WishInfrastructure;
 
-namespace WishTeams
+namespace Oxide.Plugins
 {
     public class TeamsService
     {
@@ -15,9 +14,35 @@ namespace WishTeams
             _dbClient = dbClient;
             RelationshipManager.maxTeamSize = 30;
         }
+        //0 nav creatota 1 ir creatota nav leaderis ienacis serveri 2 viss safe
+        public int TeamExists(ulong teamId)
+        {
+            return _dbClient.GetClanDataRaw<int>(teamId.ToString(), "Exists");
+        }
+        public void InitTeamJoin(ulong playerId, ulong teamId)
+        {
+            _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
+
+        }
+        public bool IsCaptain(ulong playerId, ulong teamId)
+        {
+            return _dbClient.GetClanDataRaw<string>(teamId.ToString(), "CaptainID") == playerId.ToString();
+
+        }
+        public void InitTeamCreation(ulong playerId, ulong teamId)
+        {
+            _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
+            _dbClient.SetClanData(teamId.ToString(), "CaptainID", playerId.ToString());
+            _dbClient.SetClanData(teamId.ToString(), "Exists", 1);
+        }
+        public ulong GetPlayersTeam(ulong playerId)
+        {
+            return _dbClient.GetPlayerDataRaw<ulong>(playerId.ToString(), "TeamId");
+        }
 
         public void CreateTeam(ulong playerId, ulong teamId)
         {
+            Interface.Oxide.LogDebug($"Creating team with id {teamId}, and leader {playerId}");
             var player = BasePlayer.FindByID(playerId);
 
             if (player == null)
@@ -42,8 +67,11 @@ namespace WishTeams
             player.TeamUpdate();
 
             _dbClient.SetPlayerData(player.userID.ToString(), "TeamId", aTeam.teamID.ToString());
+            _dbClient.SetPlayerData(player.userID.ToString(), "HasTeam", 1);
+
             _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainID", player.userID.ToString());
             _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainName", player.displayName);
+            _dbClient.SetClanData(aTeam.teamID.ToString(), "exists", 1);
 
 
         }

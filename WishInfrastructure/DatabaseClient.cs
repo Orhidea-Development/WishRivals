@@ -218,7 +218,7 @@ namespace WishInfrastructure
                 _clanColumns.Add(key);
             }
 
-            _clanData[clanid][key] = data.ToString();
+            _clanData[clanid][key] = data;
 
             if (!_changedClansData.Contains(clanid))
                 _changedClansData.Add(clanid);
@@ -443,6 +443,7 @@ namespace WishInfrastructure
             if (!_clanColumns.Contains(key)) return default(T);
             if (_clanData[clandid] == null) return default(T);
             if (_clanData[clandid][key] == null) return default(T);
+            Interface.Oxide.LogDebug("Getting clan data: " + key + " " + _clanData[clandid][key] +" type " + _clanData[clandid][key].GetType().Name);
             return (T)_clanData[clandid][key];
         }
 
