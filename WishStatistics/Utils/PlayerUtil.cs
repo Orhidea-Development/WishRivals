@@ -1,9 +1,4 @@
-﻿using Melanchall.DryWetMidi.Interaction;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace WishStatistics.Utils
 {
@@ -23,13 +18,13 @@ namespace WishStatistics.Utils
                 return false;
             else
 
-            return true;
+                return true;
         }
 
         //Kip uzvelk hoodie un locko slot.
         public void addHoodie(BasePlayer player, String team)
         {
-            player.inventory.containerWear.GetSlot(1).LockUnlock(true); 
+            player.inventory.containerWear.GetSlot(1).LockUnlock(true);
             Item hoodie = (Item)ItemManager.CreateByItemID(1751045826, 1);
             hoodie.MoveToContainer(player.inventory.containerWear, 1);
 

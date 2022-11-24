@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Oxide.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,7 @@ namespace Oxide.Plugins
             if (item.info.shortname == "scrap")
             {
                 Item newItem = ItemManager.CreateByItemID(item.info.itemid, amount, 0uL);
+                item.amount -= amount;
                 newItem.text = item.text;
                 return newItem;
             }

@@ -8,6 +8,7 @@ namespace Oxide.Plugins
     public partial class WishStatistics : RustPlugin
     {
         private ConfigSetup _config;
+        private GuiService _guiService;
 
         public static DatabaseClient Database { get; set; }
 
@@ -17,14 +18,14 @@ namespace Oxide.Plugins
 
             SubscribeToEvents();
             InitInfrastructure();
-
+            _guiService = new GuiService(Database);
         }
 
         private void InitInfrastructure()
         {
             Subscribe("OnServerSave");
             Subscribe("OnUserConnected");
-            Database = new DatabaseClient("WishStats","WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
+            Database = new DatabaseClient("WishStats", "WishStatsClans", this, _config.ConfigFile.DatabaseConfig);
             Database.SetupDatabase();
         }
 
