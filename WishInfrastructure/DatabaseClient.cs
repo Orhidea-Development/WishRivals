@@ -425,7 +425,7 @@ namespace WishInfrastructure
                 }
                 if (returnValues.Count < take)
                 {
-                    for (int i = 0; i < take - returnValues.Count; i++)
+                    for (int i = 0; i <= take - returnValues.Count; i++)
                     {
                         returnValues.Add(new KeyValuePair<string, T>("Nobody", default(T)));
                     }
@@ -443,7 +443,7 @@ namespace WishInfrastructure
             if (!_clanColumns.Contains(key)) return default(T);
             if (_clanData[clandid] == null) return default(T);
             if (_clanData[clandid][key] == null) return default(T);
-            Interface.Oxide.LogDebug("Getting clan data: " + key + " " + _clanData[clandid][key] +" type " + _clanData[clandid][key].GetType().Name);
+            Interface.Oxide.LogDebug("Getting clan data: " + key + " " + _clanData[clandid][key] + " type " + _clanData[clandid][key].GetType().Name);
             return (T)_clanData[clandid][key];
         }
 

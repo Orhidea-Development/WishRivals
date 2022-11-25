@@ -53,7 +53,25 @@ namespace Oxide.Plugins
             }
 
             Database.SetPlayerData(player.Id, "name", player.Name);
+            var userId = ulong.Parse(player.Id);
+            var teamId = _teamsService.GetPlayersTeam(userId);
+            var basePlayer = BasePlayer.FindByID(ulong.Parse(player.Id));
 
+            if (basePlayer.Team == null || basePlayer.Team.teamName != teamId.ToString())
+            {
+                //if (_teamsService.IsCaptain(userId, teamId))
+                //{
+                //    if (_teamsService.TeamExists(teamId) < 2)
+                //    {
+                //        _teamsService.CreateTeam(userId, teamId);
+                //        return;
+                //    }
+
+                //}
+                _teamsService.AddPlayer(userId, teamId);
+                return;
+            }
+            Interface.Oxide.LogDebug("Player already in right team");
         }
     }
 }

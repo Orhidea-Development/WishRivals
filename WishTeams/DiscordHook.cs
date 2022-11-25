@@ -75,30 +75,32 @@ namespace Oxide.Plugins
                 NoTeam(message);
                 return;
             }
-
-            if (IsLeader(userRoles))
+            if (Database.IsKnownClan(message.Author.Id.ToString()))
             {
-                Interface.Oxide.LogDebug($"User {message.Member.DisplayName} is leader");
-                if (_teamsService.TeamExists(teamId) >= 1)
+                if (Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId") != args[0] && !string.IsNullOrEmpty(Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId")))
                 {
-                    AlreadyExists(message, teamId);
+                    message.Author.SendDirectMessage(_client, $"You have already been whitelisted using id  {Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId")}");
+
+                    message.DeleteMessage(_client);
                     return;
                 }
-                else
-                {
-                    //First succes story
-                    CreateTeam(message, args, teamId);
-                }
             }
-            else
-            {
-                _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
-            }
+            message.Author.SendDirectMessage(_client, $"Team {teamId} joined");
 
+            _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
 
             Whitelist(args[0]);
-            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]}");
+            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]} servera ip: rust.rivals.lv:30109");
             message.DeleteMessage(_client);
+            SaveDiscordUser(message, args[0]);
+
+        }
+
+        private static void SaveDiscordUser(DiscordMessage message, string steam64)
+        {
+            Interface.Oxide.LogDebug($"Saving discord user {message.Author.Id}");
+            Database.SetClanData(message.Author.Id.ToString(), "Discord", message.Author.Username);
+            Database.SetClanData(message.Author.Id.ToString(), "WhitelistId", steam64);
         }
 
         private void AlreadyExists(DiscordMessage message, ulong teamId)
@@ -108,13 +110,12 @@ namespace Oxide.Plugins
             message.DeleteMessage(_client);
         }
 
-        private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
-        {
-            Interface.Oxide.LogDebug($"Team {teamId} does not exist");
-            _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
-            message.Author.SendDirectMessage(_client, $"Team {teamId} created");
-            message.DeleteMessage(_client);
-        }
+        //private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
+        //{
+        //    Interface.Oxide.LogDebug($"Team {teamId} does not exist");
+        //    _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
+        //    message.Author.SendDirectMessage(_client, $"Team {teamId} created");
+        //}
 
         private void NoTeam(DiscordMessage message)
         {

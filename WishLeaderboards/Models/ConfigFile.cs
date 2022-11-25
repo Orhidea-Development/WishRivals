@@ -1,4 +1,5 @@
-﻿using WishInfrastructure.Models;
+﻿using Steamworks;
+using WishInfrastructure.Models;
 
 namespace Oxide.Plugins
 {

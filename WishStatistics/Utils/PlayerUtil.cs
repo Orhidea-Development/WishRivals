@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WishStatistics.Utils
+namespace Oxide.Plugins
 {
     internal class PlayerUtil
     {

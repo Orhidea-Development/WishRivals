@@ -19,25 +19,15 @@ namespace Oxide.Plugins
         private void Init()
         {
             ConfigFile = _plugin.Config.ReadObject<ConfigFile>();
+
         }
 
         internal static object GetDefaultConfig()
         {
             return new ConfigFile()
             {
-                DatabaseConfig = GetDefaultDatabaseConfig(),
-            };
-        }
-
-        private static DatabaseConfig GetDefaultDatabaseConfig()
-        {
-            return new DatabaseConfig
-            {
-                sql_host = "localhost",
-                sql_port = 1234,
-                sql_db = "rust",
-                sql_user = "admin",
-                sql_pass = "password"
+                DatabaseConfig = DatabaseConfig.GetDefaultDatabaseConfig(),
+                lb_clans = new LbClan[] { new LbClan() { Id = "1", Name = "Clan1" }, new LbClan() { Id = "2", Name = "Clan2" }, new LbClan() { Id = "3", Name = "Clan3" }, new LbClan() { Id = "4", Name = "Clan4" } }
             };
         }
     }

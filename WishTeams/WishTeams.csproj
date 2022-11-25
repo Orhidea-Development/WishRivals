@@ -438,6 +438,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatCommands.cs" />
     <Compile Include="DiscordHook.cs" />
     <Compile Include="EventListeners\ServerEvents.cs" />
     <Compile Include="Models\ConfigFile.cs" />

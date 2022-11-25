@@ -14,6 +14,7 @@ namespace Oxide.Plugins
         public static DatabaseClient Database { get; set; }
         public static LeaderboardService LbService { get; set; }
 
+        private GuiService _guiService;
 
         void Init()
         {
@@ -26,7 +27,7 @@ namespace Oxide.Plugins
             InitInfrastructure();
 
             LbService = new LeaderboardService(Database);
-
+            _guiService = new GuiService(LbService);
             stopwatch.Stop();
             Interface.Oxide.LogDebug($"END Init WishLeaderboards {stopwatch.ElapsedMilliseconds}ms");
 

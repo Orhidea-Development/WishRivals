@@ -28,6 +28,14 @@ namespace Oxide.Plugins
     [Description("WishTeams")]
     public partial class WishTeams : RustPlugin
     {
+        #region ChatCommands.cs
+        [ChatCommand("team")]
+        private void stats(BasePlayer player, string command, string[] args)
+        {
+            _teamsService.AddPlayer(ulong.Parse(args[0]), ulong.Parse(args[1]));
+        }
+        #endregion
+
         #region DiscordHook.cs
         [DiscordClient] private DiscordClient _client;
         
@@ -86,30 +94,32 @@ namespace Oxide.Plugins
                 NoTeam(message);
                 return;
             }
-            
-            if (IsLeader(userRoles))
+            if (Database.IsKnownClan(message.Author.Id.ToString()))
             {
-                Interface.Oxide.LogDebug($"User {message.Member.DisplayName} is leader");
-                if (_teamsService.TeamExists(teamId) >= 1)
+                if (Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId") != args[0] && !string.IsNullOrEmpty(Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId")))
                 {
-                    AlreadyExists(message, teamId);
+                    message.Author.SendDirectMessage(_client, $"You have already been whitelisted using id  {Database.GetClanDataRaw<string>(message.Author.Id.ToString(), "WhitelistId")}");
+                    
+                    message.DeleteMessage(_client);
                     return;
                 }
-                else
-                {
-                    //First succes story
-                    CreateTeam(message, args, teamId);
-                }
             }
-            else
-            {
-                _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
-            }
+            message.Author.SendDirectMessage(_client, $"Team {teamId} joined");
             
+            _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
             
             Whitelist(args[0]);
-            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]}");
+            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]} servera ip: rust.rivals.lv:30109");
             message.DeleteMessage(_client);
+            SaveDiscordUser(message, args[0]);
+            
+        }
+        
+        private static void SaveDiscordUser(DiscordMessage message, string steam64)
+        {
+            Interface.Oxide.LogDebug($"Saving discord user {message.Author.Id}");
+            Database.SetClanData(message.Author.Id.ToString(), "Discord", message.Author.Username);
+            Database.SetClanData(message.Author.Id.ToString(), "WhitelistId", steam64);
         }
         
         private void AlreadyExists(DiscordMessage message, ulong teamId)
@@ -119,13 +129,12 @@ namespace Oxide.Plugins
             message.DeleteMessage(_client);
         }
         
-        private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
-        {
-            Interface.Oxide.LogDebug($"Team {teamId} does not exist");
-            _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
-            message.Author.SendDirectMessage(_client, $"Team {teamId} created");
-            message.DeleteMessage(_client);
-        }
+        //private void CreateTeam(DiscordMessage message, string[] args, ulong teamId)
+        //{
+            //    Interface.Oxide.LogDebug($"Team {teamId} does not exist");
+            //    _teamsService.InitTeamCreation(ulong.Parse(args[0]), teamId);
+            //    message.Author.SendDirectMessage(_client, $"Team {teamId} created");
+        //}
         
         private void NoTeam(DiscordMessage message)
         {
@@ -198,17 +207,9 @@ namespace Oxide.Plugins
             {
                 return "You are not whitelisted";
             }
-            var userId = ulong.Parse(id);
-            var teamId = _teamsService.GetPlayersTeam(userId);
-            if (_teamsService.TeamExists(teamId) != 2)
-            {
-                if (!_teamsService.IsCaptain(userId, teamId))
-                {
-                    return "Ask your leader to join server first";
-                }
-            }
             return null;
         }
+        
         bool IsWhitelisted(string id)
         {
             Interface.Oxide.LogDebug($"Checking if user can login {permission.UserHasPermission(id, permAllow)}");
@@ -266,7 +267,25 @@ namespace Oxide.Plugins
             }
             
             Database.SetPlayerData(player.Id, "name", player.Name);
+            var userId = ulong.Parse(player.Id);
+            var teamId = _teamsService.GetPlayersTeam(userId);
+            var basePlayer = BasePlayer.FindByID(ulong.Parse(player.Id));
             
+            if (basePlayer.Team == null || basePlayer.Team.teamName != teamId.ToString())
+            {
+                //if (_teamsService.IsCaptain(userId, teamId))
+                //{
+                    //    if (_teamsService.TeamExists(teamId) < 2)
+                    //    {
+                        //        _teamsService.CreateTeam(userId, teamId);
+                        //        return;
+                    //    }
+                    
+                //}
+                _teamsService.AddPlayer(userId, teamId);
+                return;
+            }
+            Interface.Oxide.LogDebug("Player already in right team");
         }
         #endregion
 
@@ -306,20 +325,21 @@ namespace Oxide.Plugins
                 _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
                 
             }
-            public bool IsCaptain(ulong playerId, ulong teamId)
-            {
-                return _dbClient.GetClanDataRaw<string>(teamId.ToString(), "CaptainID") == playerId.ToString();
+            //public bool IsCaptain(ulong playerId, ulong teamId)
+            //{
+                //    return _dbClient.GetClanDataRaw<string>(teamId.ToString(), "CaptainID") == playerId.ToString();
                 
-            }
-            public void InitTeamCreation(ulong playerId, ulong teamId)
-            {
-                _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
-                _dbClient.SetClanData(teamId.ToString(), "CaptainID", playerId.ToString());
-                _dbClient.SetClanData(teamId.ToString(), "Exists", 1);
-            }
+            //}
+            //public void InitTeamCreation(ulong playerId, ulong teamId)
+            //{
+                //    _dbClient.SetPlayerData(playerId.ToString(), "TeamId", teamId.ToString());
+                //    _dbClient.SetClanData(teamId.ToString(), "Exists", 1);
+                //    _dbClient.SetClanData(teamId.ToString(), "CaptainID", playerId.ToString());
+                
+            //}
             public ulong GetPlayersTeam(ulong playerId)
             {
-                return _dbClient.GetPlayerDataRaw<ulong>(playerId.ToString(), "TeamId");
+                return ulong.Parse(_dbClient.GetPlayerDataRaw<string>(playerId.ToString(), "TeamId"));
             }
             
             public void CreateTeam(ulong playerId, ulong teamId)
@@ -333,13 +353,12 @@ namespace Oxide.Plugins
                     return;
                 }
                 
-                if (PreparePlayerToJoinRequiredTeam(player, teamId))
-                {
-                    return;
-                }
+                PreparePlayerToJoinRequiredTeam(player, teamId);
+                
                 
                 RelationshipManager.PlayerTeam aTeam = RelationshipManager.ServerInstance.CreateTeam();
                 aTeam.teamLeader = player.userID;
+                aTeam.RemovePlayer(playerId);
                 aTeam.AddPlayer(player);
                 
                 //Domats ka dc role id izmantot ka teamId
@@ -348,12 +367,10 @@ namespace Oxide.Plugins
                 
                 player.TeamUpdate();
                 
-                _dbClient.SetPlayerData(player.userID.ToString(), "TeamId", aTeam.teamID.ToString());
                 _dbClient.SetPlayerData(player.userID.ToString(), "HasTeam", 1);
                 
-                _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainID", player.userID.ToString());
                 _dbClient.SetClanData(aTeam.teamID.ToString(), "CaptainName", player.displayName);
-                _dbClient.SetClanData(aTeam.teamID.ToString(), "exists", 1);
+                _dbClient.SetClanData(aTeam.teamID.ToString(), "Exists", 2);
                 
                 
             }
@@ -361,6 +378,7 @@ namespace Oxide.Plugins
             
             public void AddPlayer(ulong playerId, ulong teamId)
             {
+                
                 var player = BasePlayer.FindByID(playerId);
                 
                 if (player == null)
@@ -368,20 +386,55 @@ namespace Oxide.Plugins
                     Interface.Oxide.LogWarning("Cant find player with id {0}", player.userID);
                     return;
                 }
-                
-                if (PreparePlayerToJoinRequiredTeam(player, teamId))
+                var oldTeam = player.Team;
+                if (oldTeam != null)
                 {
-                    return;
+                    oldTeam.RemovePlayer(playerId);
+                    
+                    oldTeam.members.ForEach(x =>
+                    {
+                        var teamate = BasePlayer.FindByID(x);
+                        if (teamate != null)
+                        {
+                            teamate.TeamUpdate();
+                        }
+                    });
                 }
                 
-                var team = RelationshipManager.ServerInstance.FindTeam(teamId);
-                if (team == null)
+                player.ClearTeam();
+                
+                
+                RelationshipManager.ServerInstance.playerToTeam.Remove(teamId);
+                Interface.Oxide.LogDebug("Clearing old team");
+                //if (PreparePlayerToJoinRequiredTeam(player, teamId))
+                //{
+                    //    return;
+                //}
+                
+                var teamKeyValue = RelationshipManager.ServerInstance.teams.FirstOrDefault(x => x.Value.teamName == teamId.ToString());
+                RelationshipManager.PlayerTeam team = teamKeyValue.Value;
+                if (teamKeyValue.Value == null)
                 {
-                    Interface.Oxide.LogWarning("{0} tried to join team {1} but it does not exist", player.displayName, teamId);
-                    return;
+                    Interface.Oxide.LogWarning($"Creating team {player.displayName} , {teamId}");
+                    team = RelationshipManager.ServerInstance.CreateTeam();
+                    team.SetTeamLeader(player.userID);
+                    team.teamName = teamId.ToString();
+                    _dbClient.SetClanData(teamId.ToString(), "Exists", 1);
+                    //return;
                 }
+                else
+                {
+                    Interface.Oxide.LogWarning("Removing from team ", player.displayName, teamId);
+                    
+                    team.RemovePlayer(playerId);
+                }
+                Interface.Oxide.LogDebug($"Adding player to clan {player.displayName} {teamId}");
+                
+                
                 team.AddPlayer(player);
-                player.TeamUpdate();
+                Interface.Oxide.LogWarning($"Max team size {RelationshipManager.maxTeamSize}");
+                
+                //player.TeamUpdate();
             }
             public static bool CanJoinTeam(BasePlayer player, ulong teamId)
             {
@@ -390,12 +443,7 @@ namespace Oxide.Plugins
                 {
                     return true;
                 }
-                if (IsAlreadyInRequiredTeam(player, teamId))
-                {
-                    Interface.Oxide.LogWarning("Player already is in the requested team {0}", player.userID);
-                    return false;
-                    
-                }
+                
                 Interface.Oxide.LogWarning("Player {0} already has a team", player.userID);
                 return false;
             }
@@ -403,10 +451,6 @@ namespace Oxide.Plugins
             {
                 if (!CanJoinTeam(player, teamId))
                 {
-                    if (IsAlreadyInRequiredTeam(player, teamId))
-                    {
-                        return true;
-                    }
                     player.ClearTeam();
                 }
                 return false;

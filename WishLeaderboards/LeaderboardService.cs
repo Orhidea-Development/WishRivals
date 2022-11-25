@@ -26,20 +26,12 @@ namespace Oxide.Plugins
         {
             _leaderboards = new List<Leaderboard>()
             {
-                InitLeaderboard("Shots"),
-                InitLeaderboard("Headshots"),
-                InitLeaderboard("Damage"),
-                InitLeaderboard("Hits"),
                 InitLeaderboard("Kills"),
+                InitLeaderboard("Deaths"),
+                InitLeaderboard("Damage"),
                 InitLeaderboard("ScrapWon"),
-                InitLeaderboard("ScrapLost"),
-                InitLeaderboard("TreesFarmed"),
                 InitLeaderboard("OresFarmed"),
                 InitLeaderboard("ItemsCrafted"),
-                InitLeaderboard("AnimalKills"),
-                InitLeaderboard("NpcKills"),
-                InitLeaderboard("Revives")
-                
             };
         }
         private Leaderboard InitLeaderboard(string name)

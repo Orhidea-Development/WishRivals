@@ -26,6 +26,7 @@ namespace Oxide.Plugins
             return new ConfigFile()
             {
                 DatabaseConfig = GetDefaultDatabaseConfig(),
+
             };
         }
 

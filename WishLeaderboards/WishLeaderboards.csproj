@@ -435,7 +435,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatCommands.cs" />
     <Compile Include="EventListeners\ServerEvents.cs" />
+    <Compile Include="GuiService.cs" />
     <Compile Include="Leaderboard.cs" />
     <Compile Include="LeaderboardService.cs" />
     <Compile Include="Models\ConfigFile.cs" />

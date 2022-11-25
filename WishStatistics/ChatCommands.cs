@@ -7,6 +7,11 @@
         {
             _guiService.ActivateGui(player);
         }
+        [ChatCommand("stats")]
+        private void stats1(BasePlayer player, string command, string[] args)
+        {
+            _guiService.ActivateGui(player);
+        }
 
         [ConsoleCommand("stats_close")]
         private void stats_close(ConsoleSystem.Arg arg)
