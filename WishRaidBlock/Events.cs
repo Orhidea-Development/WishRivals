@@ -21,7 +21,9 @@ namespace Oxide.Plugins
                 {
                     if (info.InitiatorPlayer.Team.teamID != 0UL)
                     {
-                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true) { return null;
+                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true)
+                        {
+                            return null;
                         }
                     }
                 }
@@ -37,6 +39,7 @@ namespace Oxide.Plugins
                             PrintToChat(info.InitiatorPlayer, lang.GetMessage("nodamage", this, info.InitiatorPlayer.UserIDString)
                                 .Replace("{starttime}", ShowTime(_raidBlockService.GetStartTime()))
                                 .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime())));
+
                         }
                         else
                         {

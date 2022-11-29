@@ -61,7 +61,6 @@ namespace Oxide.Plugins
                 {
                     continue;
                 }
-                Interface.Oxide.LogDebug($"Enabling raidblock ui for {player.displayName}");
 
                 CuiHelper.AddUi(player, RAIDBLOCKENABLEDGUI);
                 _players.Add(player);

@@ -8,6 +8,7 @@ namespace Oxide.Plugins
     {
         private readonly DynamicConfigFile _config;
 
+        private bool _isForceActive;
         private bool _isActive;
         public RaidBlockService(DynamicConfigFile config)
         {
@@ -16,26 +17,27 @@ namespace Oxide.Plugins
 
         public bool IsOn()
         {
-            if (_isActive) return true;
+            if (_isForceActive) return true;
 
             if ((bool)_config["RaidBlockOn"] == false) return false;
 
-            return IsOnUsingConfigTime();
+            return _isActive;
+            //return IsOnUsingConfigTime();
         }
         public bool IsForceActivated()
         {
-            return _isActive;
+            return _isForceActive;
         }
         public void Enable()
         {
-            _isActive = true;
+            _isForceActive = true;
         }
         public void Disable()
         {
-            _isActive = false;
+            _isForceActive = false;
         }
 
-        private bool IsOnUsingConfigTime()
+        public void UpdateIsOnUsingConfigTime()
         {
             var start = GetStartTime();
             var end = GetEndTime();
@@ -43,9 +45,9 @@ namespace Oxide.Plugins
 
             if (start <= end)
             {
-                return now >= start && now <= end;
+                _isActive = now >= start && now <= end;
             }
-            return now >= start || now <= end;
+            _isActive = now >= start || now <= end;
         }
 
         public TimeSpan GetStartTime()

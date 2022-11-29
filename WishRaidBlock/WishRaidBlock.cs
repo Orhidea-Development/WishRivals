@@ -24,13 +24,15 @@ namespace Oxide.Plugins
             GuiService guiService = new GuiService();
             timer.Every(30, () =>
             {
+                _raidBlockService.UpdateIsOnUsingConfigTime();
                 if (_raidBlockService.IsOn())
                 {
                     Interface.Oxide.LogDebug("Raidlock active, enabling UI");
 
                     guiService.ActivateGui();
                 }
-                else {
+                else
+                {
                     Interface.Oxide.LogDebug("Raidlock disabled, destroying UI");
                     guiService.DestroyGui();
                 }
