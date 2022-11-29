@@ -26,8 +26,7 @@ namespace Oxide.Plugins
         {
             PrintToChat(player, lang.GetMessage("nodamage", this, player.UserIDString)
             .Replace("{starttime}", ShowTime(_raidBlockService.GetStartTime()))
-            .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime()))
-            .Replace("{isOn}", _raidBlockService.IsOn() ? "ON" : "OFF"));
+            .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime())));
             
             if (!permission.UserHasPermission(player.UserIDString, adminPriv))
             return;
@@ -70,7 +69,9 @@ namespace Oxide.Plugins
                 {
                     if (info.InitiatorPlayer.Team.teamID != 0UL)
                     {
-                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true) { return null;
+                        if (info.InitiatorPlayer.Team?.members?.Any(teamUserId => teamUserId == entity.OwnerID) == true)
+                        {
+                            return null;
                         }
                     }
                 }
@@ -86,6 +87,7 @@ namespace Oxide.Plugins
                             PrintToChat(info.InitiatorPlayer, lang.GetMessage("nodamage", this, info.InitiatorPlayer.UserIDString)
                             .Replace("{starttime}", ShowTime(_raidBlockService.GetStartTime()))
                             .Replace("{endtime}", ShowTime(_raidBlockService.GetEndTime())));
+                            
                         }
                         else
                         {
@@ -123,13 +125,15 @@ namespace Oxide.Plugins
             GuiService guiService = new GuiService();
             timer.Every(30, () =>
             {
+                _raidBlockService.UpdateIsOnUsingConfigTime();
                 if (_raidBlockService.IsOn())
                 {
                     Interface.Oxide.LogDebug("Raidlock active, enabling UI");
                     
                     guiService.ActivateGui();
                 }
-                else {
+                else
+                {
                     Interface.Oxide.LogDebug("Raidlock disabled, destroying UI");
                     guiService.DestroyGui();
                 }
@@ -249,7 +253,6 @@ namespace Oxide.Plugins
                     {
                         continue;
                     }
-                    Interface.Oxide.LogDebug($"Enabling raidblock ui for {player.displayName}");
                     
                     CuiHelper.AddUi(player, RAIDBLOCKENABLEDGUI);
                     _players.Add(player);
@@ -296,7 +299,7 @@ namespace Oxide.Plugins
                 _lang.RegisterMessages(new Dictionary<string, string>
                 {
                     { "localtime", "Local time is {localtime}." },
-                    { "nodamage", "You cannot cause damage to buildings from {starttime} until {endtime}. Currently damage is {isOn}" },
+                    { "nodamage", "You cannot cause damage to buildings from {starttime} until {endtime}" },
                     { "activated", "You cannot cause damage while Raid block is activated." },
                     { "starts", "Raid block starts at {starts}." },
                     { "onstatus", "Raid block is ON. It is active  from @ {starttime} until {endtime}" },
@@ -313,6 +316,7 @@ namespace Oxide.Plugins
         {
             private readonly DynamicConfigFile _config;
             
+            private bool _isForceActive;
             private bool _isActive;
             public RaidBlockService(DynamicConfigFile config)
             {
@@ -321,26 +325,27 @@ namespace Oxide.Plugins
             
             public bool IsOn()
             {
-                if (_isActive) return true;
+                if (_isForceActive) return true;
                 
                 if ((bool)_config["RaidBlockOn"] == false) return false;
                 
-                return IsOnUsingConfigTime();
+                return _isActive;
+                //return IsOnUsingConfigTime();
             }
             public bool IsForceActivated()
             {
-                return _isActive;
+                return _isForceActive;
             }
             public void Enable()
             {
-                _isActive = true;
+                _isForceActive = true;
             }
             public void Disable()
             {
-                _isActive = false;
+                _isForceActive = false;
             }
             
-            private bool IsOnUsingConfigTime()
+            public void UpdateIsOnUsingConfigTime()
             {
                 var start = GetStartTime();
                 var end = GetEndTime();
@@ -348,9 +353,9 @@ namespace Oxide.Plugins
                 
                 if (start <= end)
                 {
-                    return now >= start && now <= end;
+                    _isActive = now >= start && now <= end;
                 }
-                return now >= start || now <= end;
+                _isActive = now >= start || now <= end;
             }
             
             public TimeSpan GetStartTime()

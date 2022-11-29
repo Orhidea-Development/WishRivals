@@ -57,8 +57,9 @@ namespace Oxide.Plugins
             if (attacker != null || attacker.userID.IsSteamId())
             {
                 Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
-                if (attacker.Team != null)
+                if (attacker.Team != null && attacker?.Team?.teamID != player?.Team?.teamID)
                 {
+                    
                     Database.SetClanData(attacker.Team.teamID.ToString(), "Kills", Database.GetClanDataRaw<int>(attacker.Team.teamID.ToString(), "Kills") + 1);
                 }
 

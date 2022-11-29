@@ -22,20 +22,20 @@ namespace Oxide.Plugins
         internal void UpdateClanUI()
         {
 
-            foreach (var player in _players)
-            {
-                if (IsOnline(player))
-                {
-                    CuiHelper.DestroyUi(player, "mainclans");
-                }
-            }
+            //foreach (var player in _players)
+            //{
+            //    if (IsOnline(player))
+            //    {
+            //        CuiHelper.DestroyUi(player, "mainclan");
+            //    }
+            //}
             string generatedGui = GenerateClanGui();
 
             var activePlayers = BasePlayer.activePlayerList;
 
             foreach (var player in activePlayers)
             {
-                Interface.Oxide.LogDebug($"Enabling raidblock ui for {player.displayName}");
+                CuiHelper.DestroyUi(player, "mainclan");
 
                 CuiHelper.AddUi(player, generatedGui);
                 _players.Add(player);
@@ -56,12 +56,12 @@ namespace Oxide.Plugins
                     continue;
                 }
                 Interface.Oxide.LogDebug($"Found clan {clanId}");
-                
+
                 stringBuilder = stringBuilder.Replace($"%team_{i}%", clan.Name + ":");
                 stringBuilder = stringBuilder.Replace($"%team_{i}kills%", _databaseClient.GetClanDataRaw<int>(clanId.ToString(), "Kills").ToString());
 
                 i++;
-            } 
+            }
             return stringBuilder.ToString();
         }
 
@@ -245,6 +245,7 @@ namespace Oxide.Plugins
       {
         ""type"": ""UnityEngine.UI.Text"",
         ""text"": ""%team_4% %team_4kills%"",
+        ""fontSize"": 12,
         ""align"": ""MiddleCenter""
       },
       {

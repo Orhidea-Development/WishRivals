@@ -18,7 +18,12 @@
         {
             _guiService.DestroyGui(BasePlayer.FindByID(ulong.Parse(arg.Args[0])));
         }
+        [ConsoleCommand("remove_points_clan")]
+        private void remove_points_clan(ConsoleSystem.Arg arg)
+        {
+            Database.SetClanData(arg.Args[0], arg.Args[1], Database.GetClanDataRaw<int>(arg.Args[0], arg.Args[1]) - int.Parse(arg.Args[2]));
+        }
 
-        
+
     }
 }

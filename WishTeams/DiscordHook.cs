@@ -90,7 +90,7 @@ namespace Oxide.Plugins
             _teamsService.InitTeamJoin(ulong.Parse(args[0]), teamId);
 
             Whitelist(args[0]);
-            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]} servera ip: rust.rivals.lv:30109");
+            message.Author.SendDirectMessage(_client, $"You have been whitelisted {args[0]} servera ip: 49.12.133.163:30109");
             message.DeleteMessage(_client);
             SaveDiscordUser(message, args[0]);
 

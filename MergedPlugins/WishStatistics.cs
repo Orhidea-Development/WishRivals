@@ -40,6 +40,11 @@ namespace Oxide.Plugins
         {
             _guiService.DestroyGui(BasePlayer.FindByID(ulong.Parse(arg.Args[0])));
         }
+        [ConsoleCommand("remove_points_clan")]
+        private void remove_points_clan(ConsoleSystem.Arg arg)
+        {
+            Database.SetClanData(arg.Args[0], arg.Args[1], Database.GetClanDataRaw<int>(arg.Args[0], arg.Args[1]) - int.Parse(arg.Args[2]));
+        }
         #endregion
 
         #region WishStatistics.cs
@@ -160,8 +165,9 @@ namespace Oxide.Plugins
             if (attacker != null || attacker.userID.IsSteamId())
             {
                 Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
-                if (attacker.Team != null)
+                if (attacker.Team != null && attacker?.Team?.teamID != player?.Team?.teamID)
                 {
+                    
                     Database.SetClanData(attacker.Team.teamID.ToString(), "Kills", Database.GetClanDataRaw<int>(attacker.Team.teamID.ToString(), "Kills") + 1);
                 }
                 
@@ -288,20 +294,20 @@ namespace Oxide.Plugins
             internal void UpdateClanUI()
             {
                 
-                foreach (var player in _players)
-                {
-                    if (IsOnline(player))
-                    {
-                        CuiHelper.DestroyUi(player, "mainclans");
-                    }
-                }
+                //foreach (var player in _players)
+                //{
+                    //    if (IsOnline(player))
+                    //    {
+                        //        CuiHelper.DestroyUi(player, "mainclan");
+                    //    }
+                //}
                 string generatedGui = GenerateClanGui();
                 
                 var activePlayers = BasePlayer.activePlayerList;
                 
                 foreach (var player in activePlayers)
                 {
-                    Interface.Oxide.LogDebug($"Enabling raidblock ui for {player.displayName}");
+                    CuiHelper.DestroyUi(player, "mainclan");
                     
                     CuiHelper.AddUi(player, generatedGui);
                     _players.Add(player);
@@ -511,6 +517,7 @@ namespace Oxide.Plugins
                 {
                     ""type"": ""UnityEngine.UI.Text"",
                     ""text"": ""%team_4% %team_4kills%"",
+                    ""fontSize"": 12,
                     ""align"": ""MiddleCenter""
                 },
                 {

@@ -21,12 +21,12 @@ namespace Oxide.Plugins
             SubscribeToEvents();
             InitInfrastructure();
             _guiService = new GuiService(Database);
-            _clanGuiService = new ClanGuiService(_config, Database);
-            timer.Every(30, () =>
-            {
-                Interface.Oxide.LogDebug("Updating clan scores");
-                _clanGuiService.UpdateClanUI();
-            });
+            //_clanGuiService = new ClanGuiService(_config, Database);
+            //timer.Every(30, () =>
+            //{
+            //    Interface.Oxide.LogDebug("Updating clan scores");
+            //    _clanGuiService.UpdateClanUI();
+            //});
             
         }
 
