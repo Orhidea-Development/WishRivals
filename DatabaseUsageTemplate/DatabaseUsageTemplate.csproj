@@ -435,8 +435,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AdminRadar.cs" />
     <Compile Include="DatabaseUsageTemplate.cs" />
     <Compile Include="EventListeners\DatabaseSaveEvents.cs" />
+    <Compile Include="GodMode.cs" />
     <Compile Include="Models\ConfigFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup\ConfigSetup.cs" />
