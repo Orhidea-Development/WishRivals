@@ -51,9 +51,13 @@ namespace Oxide.Plugins
             Database.SetPlayerData(player.UserIDString.ToString(), "Deaths", Database.GetPlayerDataRaw<int>(player.UserIDString, "Deaths") + 1);
             
             var attacker = info.InitiatorPlayer;
-            if (attacker != null || attacker.userID.IsSteamId()) 
+            if (attacker != null || attacker.userID.IsSteamId() || attacker != player) 
             {
                 Database.SetPlayerData(attacker.UserIDString.ToString(), "Kills", Database.GetPlayerDataRaw<int>(attacker.UserIDString, "Kills") + 1);
+                if (attacker.Team != null)
+                {
+                    Database.SetClanData(attacker.Team.teamID.ToString(), "Kills", Database.GetClanDataRaw<int>(attacker.Team.teamID.ToString(), "Kills") + 1);
+                }
             }
             return null;
         }
@@ -63,10 +67,10 @@ namespace Oxide.Plugins
         //Npc & animal kills
         void OnEntityDeath(BaseCombatEntity entity, HitInfo info)
         {
-			if (entity == null || info == null || info.Initiator == null || entity == info.Initiator) return;
+			if (entity == null || info == null || info.Initiator == null) return;
 
             var attacker = info.InitiatorPlayer;
-            if (attacker == null || !attacker.userID.IsSteamId()) return;
+            if (attacker == null || !attacker.userID.IsSteamId() || attacker == entity) return;
 
             if (entity is BaseAnimalNPC)
             {
@@ -114,7 +118,7 @@ namespace Oxide.Plugins
         void OnWeaponFired(BaseProjectile projectile, BasePlayer player, ItemModProjectile mod, ProtoBuf.ProjectileShoot projectiles)
         {
             if (projectile == null || player == null || !player.userID.IsSteamId())
-                 return;
+                return;
 
             Database.SetPlayerData(player.UserIDString.ToString(), "Shots", Database.GetPlayerDataRaw<int>(player.UserIDString, "Shots") + 1);
         }
